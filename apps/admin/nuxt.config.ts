@@ -13,6 +13,11 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  // Disable vite-plugin-checker TypeScript checking in dev (use nuxt typecheck instead)
+  typescript: {
+    typeCheck: false
+  },
+
   css: ['~/assets/css/main.css'],
 
   // Admin app has the API - configure CORS for cross-subdomain access
