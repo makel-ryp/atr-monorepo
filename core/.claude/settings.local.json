@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(bun:*)",
+      "Bash(bunx nuxi@latest init:*)"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "app-agent",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "core",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:admin": "turbo run dev --filter=@app-agent/admin",
+    "dev:demo": "turbo run dev --filter=@app-agent/demo",
+    "dev:www": "turbo run dev --filter=@app-agent/www",
+    "build": "turbo run build",
+    "build:admin": "turbo run build --filter=@app-agent/admin",
+    "build:demo": "turbo run build --filter=@app-agent/demo",
+    "build:www": "turbo run build --filter=@app-agent/www",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0"
+  },
+  "packageManager": "bun@1.2.15"
+}

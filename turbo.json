@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".output/**", ".nuxt/**"],
+      "env": [
+        "NUXT_PUBLIC_API_BASE",
+        "NUXT_API_SECRET",
+        "SUPABASE_URL",
+        "SUPABASE_KEY"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    }
+  }
+}

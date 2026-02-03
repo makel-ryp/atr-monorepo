@@ -1,0 +1,91 @@
+# Deploy Workflow - Protected with environment secrets
+# Forks cannot access secrets; requires manual approval for PRs
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Deploy Admin first (other apps depend on its API)
+  deploy-admin:
+    name: Deploy Admin (admin.app-agent.io)
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.repository == 'YOUR_ORG/app-agent.io' # TODO: Update this
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2.0.1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build admin app
+        run: bun run build:admin
+        env:
+          NUXT_PUBLIC_API_BASE: /api
+
+      # Uncomment your deployment method:
+      # - name: Deploy to Cloudflare
+      #   uses: cloudflare/wrangler-action@v3
+      #   with:
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      #     workingDirectory: apps/admin
+      #     command: pages deploy .output/public --project-name=app-agent-admin
+
+      - name: Deployment placeholder
+        run: echo "Configure admin deployment above"
+
+  # Deploy Demo after Admin
+  deploy-demo:
+    name: Deploy Demo (demo.app-agent.io)
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-admin
+    if: github.repository == 'YOUR_ORG/app-agent.io'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2.0.1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build demo app
+        run: bun run build:demo
+        env:
+          NUXT_PUBLIC_API_BASE: https://admin.app-agent.io/api
+
+      - name: Deployment placeholder
+        run: echo "Configure demo deployment above"
+
+  # Deploy WWW after Admin
+  deploy-www:
+    name: Deploy WWW (www.app-agent.io)
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-admin
+    if: github.repository == 'YOUR_ORG/app-agent.io'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2.0.1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build www app
+        run: bun run build:www
+        env:
+          NUXT_PUBLIC_API_BASE: https://admin.app-agent.io/api
+
+      - name: Deployment placeholder
+        run: echo "Configure www deployment above"
