@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "Bash(bun:*)",
-      "Bash(bunx nuxi@latest init:*)"
+      "Bash(bunx nuxi@latest init:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(node:*)"
     ]
   }
 }
