@@ -7,9 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/image',
     '@nuxt/ui',
-    '@nuxt/content',
-    '@vueuse/nuxt',
-    'nuxt-og-image'
+    '@nuxt/content'
   ],
 
   devtools: {
@@ -23,23 +21,25 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/docs': { redirect: '/docs/getting-started', prerender: false }
+  mdc: {
+    highlight: {
+      noApiRoute: false
+    }
   },
 
-  // Runtime config - point to admin API
+  // Runtime config - point to dashboard API
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3001/api'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3010/api'
     }
   },
 
   // App-specific head config
   app: {
     head: {
-      title: 'App Agent',
+      title: 'SaaS Demo - App Agent',
       meta: [
-        { name: 'description', content: 'App Agent - Build intelligent applications' }
+        { name: 'description', content: 'SaaS demo - customer-facing application patterns' }
       ]
     }
   },
@@ -51,8 +51,7 @@ export default defineNuxtConfig({
     prerender: {
       routes: [
         '/'
-      ],
-      crawlLinks: true
+      ]
     }
   },
 

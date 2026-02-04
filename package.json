@@ -4,17 +4,20 @@
   "workspaces": [
     "apps/*",
     "core",
+    "core/docs",
+    "demos/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:admin": "turbo run dev --filter=@app-agent/admin",
-    "dev:demo": "turbo run dev --filter=@app-agent/demo",
-    "dev:www": "turbo run dev --filter=@app-agent/www",
-    "build": "turbo run build",
-    "build:admin": "turbo run build --filter=@app-agent/admin",
-    "build:demo": "turbo run build --filter=@app-agent/demo",
-    "build:www": "turbo run build --filter=@app-agent/www",
+    "dev": "node core/cli/dev.js",
+    "dev:apps": "turbo run dev --filter=\"./apps/*\"",
+    "dev:demos": "turbo run dev --filter=\"@app-agent/demo-*\"",
+    "dev:docs": "turbo run dev --filter=@app-agent/docs",
+    "dev:all": "turbo run dev",
+    "build": "turbo run build --filter=\"./apps/*\"",
+    "build:demos": "turbo run build --filter=\"@app-agent/demo-*\"",
+    "build:docs": "turbo run build --filter=@app-agent/docs",
+    "build:all": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules"

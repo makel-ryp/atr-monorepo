@@ -45,9 +45,9 @@ export default defineNuxtConfig({
   // App-specific head config
   app: {
     head: {
-      title: 'Admin - App Agent',
+      title: 'Dashboard Demo - App Agent',
       meta: [
-        { name: 'description', content: 'App Agent Admin Dashboard' }
+        { name: 'description', content: 'Dashboard demo - internal tools, admin panels, analytics' }
       ]
     }
   },

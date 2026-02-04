@@ -1,10 +1,10 @@
 {
-  "name": "@app-agent/demo",
+  "name": "@app-agent/demo-landing",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev --port 3002",
+    "dev": "nuxt dev --port 3012",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
@@ -18,9 +18,13 @@
     "@nuxt/content": "^3.11.0",
     "@nuxt/image": "^2.0.0",
     "@nuxt/ui": "^4.4.0",
+    "@standard-schema/spec": "^1.1.0",
+    "@vueuse/nuxt": "^14.1.0",
     "better-sqlite3": "^12.6.2",
     "nuxt": "^4.3.0",
-    "tailwindcss": "^4.1.18"
+    "nuxt-og-image": "^5.1.13",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.13.0",
