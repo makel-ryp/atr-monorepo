@@ -1,7 +1,7 @@
 ---
 seo:
   title: Documentation
-  description: Welcome to the documentation.
+  description: Welcome to your documentation hub.
 ---
 
 ::u-page-hero
@@ -13,16 +13,16 @@ orientation: horizontal
 Documentation
 
 #description
-Welcome to the documentation. Your docs live in the `/docs/` folder at the root of your project.
+Your team's knowledge hub. Write documentation in `/docs/` - it automatically appears here.
 
 #links
   :::u-button
   ---
-  to: /internal/app-agent
+  to: /internal/app-agent/documentation
   size: xl
   trailing-icon: i-lucide-arrow-right
   ---
-  App Agent Reference
+  Start Writing Docs
   :::
 
   :::u-button
@@ -42,7 +42,7 @@ Welcome to the documentation. Your docs live in the `/docs/` folder at the root 
 Getting Started
 
 #description
-Add your documentation to the `/docs/` folder. It will automatically appear in the navigation.
+Add documentation to the `/docs/` folder at your repository root. Changes appear instantly.
 
 #features
   :::u-page-feature
@@ -50,21 +50,21 @@ Add your documentation to the `/docs/` folder. It will automatically appear in t
   icon: i-lucide-folder
   ---
   #title
-  Your Docs
+  Write in /docs/
 
   #description
-  Create `.md` files in `/docs/` to add documentation pages.
+  Create `.md` files in `/docs/` - they appear here automatically.
   :::
 
   :::u-page-feature
   ---
-  icon: i-lucide-lock
+  icon: i-lucide-git-merge
   ---
   #title
-  Internal Reference
+  No Merge Conflicts
 
   #description
-  App Agent documentation is in [/internal/app-agent](/internal/app-agent).
+  Your docs in `/docs/` stay separate from upstream updates.
   :::
 
   :::u-page-feature
@@ -75,7 +75,7 @@ Add your documentation to the `/docs/` folder. It will automatically appear in t
   AI-Powered
 
   #description
-  The MCP server gives AI assistants full access to all documentation.
+  The [MCP server](/internal/app-agent/ai/mcp) gives AI assistants full documentation access.
   :::
 
   :::u-page-feature
@@ -86,6 +86,54 @@ Add your documentation to the `/docs/` folder. It will automatically appear in t
   Easy to Write
 
   #description
-  Use Markdown with [MDC components](/internal/app-agent/essentials).
+  Use Markdown with [MDC components](/internal/app-agent/documentation).
   :::
+::
+
+::u-page-section
+#title
+Documentation Structure
+
+#description
+Two types of documentation, two locations:
+
+#features
+  :::u-page-feature
+  ---
+  icon: i-lucide-lock
+  ---
+  #title
+  Internal Docs
+
+  #description
+  `/docs/internal/**` → merges into the [Internal](/internal) section alongside App Agent reference.
+  :::
+
+  :::u-page-feature
+  ---
+  icon: i-lucide-globe
+  ---
+  #title
+  Top-Level Docs
+
+  #description
+  `/docs/**` (except internal) → creates new top-level sections like `/company/` or `/guides/`.
+  :::
+::
+
+::u-page-section
+---
+align: left
+---
+#title
+Always Running
+
+#description
+The documentation server runs on `localhost:3000` during development. This is intentional - your team and AI assistants need access to documentation at all times.
+
+```bash
+bun run dev        # Docs + your apps
+bun run dev:demos  # Docs + demo apps
+bun run dev:docs   # Just docs
+```
 ::

@@ -1,7 +1,14 @@
+/**
+ * App Agent Documentation Configuration
+ *
+ * This file controls branding, navigation, and links for the documentation site.
+ * Customers can customize these values - minor merge conflicts on upstream updates
+ * are expected and easy to resolve.
+ */
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'green',
+      primary: 'sky',
       neutral: 'slate'
     },
     footer: {
@@ -12,60 +19,61 @@ export default defineAppConfig({
     }
   },
   seo: {
-    siteName: 'Nuxt Docs Template'
+    siteName: 'App Agent'
   },
   header: {
-    title: '',
+    title: 'App Agent',
     to: '/',
     logo: {
-      alt: '',
-      light: '',
-      dark: ''
+      alt: 'App Agent',
+      light: '/logo-quarter.png',
+      dark: '/logo-quarter.png'
     },
     search: true,
     colorMode: true,
+    // Set to false to hide the template switcher dropdown
+    showTemplateMenu: false,
+    // Header links (top right)
     links: [{
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt-ui-templates/docs',
+      'to': 'https://github.com/your-org/app-agent',
       'target': '_blank',
       'aria-label': 'GitHub'
     }]
   },
   footer: {
-    credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
+    // Footer credits text
+    credits: `Built with App Agent • © ${new Date().getFullYear()}`,
     colorMode: false,
+    // Footer social links
     links: [{
       'icon': 'i-simple-icons-discord',
-      'to': 'https://go.nuxt.com/discord',
+      'to': 'https://discord.gg/your-server',
       'target': '_blank',
-      'aria-label': 'Nuxt on Discord'
+      'aria-label': 'Discord'
     }, {
       'icon': 'i-simple-icons-x',
-      'to': 'https://go.nuxt.com/x',
+      'to': 'https://x.com/your-handle',
       'target': '_blank',
-      'aria-label': 'Nuxt on X'
+      'aria-label': 'X (Twitter)'
     }, {
       'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt/ui',
+      'to': 'https://github.com/your-org/app-agent',
       'target': '_blank',
-      'aria-label': 'Nuxt UI on GitHub'
+      'aria-label': 'GitHub'
     }]
   },
   toc: {
     title: 'Table of Contents',
     bottom: {
-      title: 'Community',
-      edit: 'https://github.com/nuxt-ui-templates/docs/edit/main/content',
+      title: 'Resources',
+      // Set to null to hide the "Edit this page" link
+      edit: null,
       links: [{
-        icon: 'i-lucide-star',
-        label: 'Star on GitHub',
-        to: 'https://github.com/nuxt/ui',
-        target: '_blank'
-      }, {
         icon: 'i-lucide-book-open',
-        label: 'Nuxt UI docs',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank'
+        label: 'App Agent Docs',
+        to: '/internal/app-agent/getting-started',
+        target: '_self'
       }]
     }
   }
