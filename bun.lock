@@ -26,6 +26,7 @@
     "core/docs": {
       "name": "@app-agent/docs-layer",
       "dependencies": {
+        "@app-agent/organization": "workspace:*",
         "@iconify-json/lucide": "^1.2.87",
         "@iconify-json/simple-icons": "^1.2.68",
         "@iconify-json/vscode-icons": "^1.2.40",
@@ -55,7 +56,7 @@
     "demos/dashboard": {
       "name": "@app-agent/demo-dashboard",
       "dependencies": {
-        "@app-agent/core": "workspace:*",
+        "@app-agent/organization": "workspace:*",
         "@iconify-json/lucide": "^1.2.87",
         "@iconify-json/simple-icons": "^1.2.68",
         "@internationalized/date": "^3.10.1",
@@ -81,7 +82,7 @@
     "demos/landing": {
       "name": "@app-agent/demo-landing",
       "dependencies": {
-        "@app-agent/core": "workspace:*",
+        "@app-agent/organization": "workspace:*",
         "@iconify-json/lucide": "^1.2.87",
         "@iconify-json/simple-icons": "^1.2.68",
         "@nuxt/content": "^3.11.0",
@@ -105,7 +106,7 @@
     "demos/saas": {
       "name": "@app-agent/demo-saas",
       "dependencies": {
-        "@app-agent/core": "workspace:*",
+        "@app-agent/organization": "workspace:*",
         "@iconify-json/lucide": "^1.2.87",
         "@iconify-json/simple-icons": "^1.2.68",
         "@nuxt/content": "^3.11.0",
@@ -152,6 +153,16 @@
         "vue-tsc": "^3.2.2",
       },
     },
+    "organization": {
+      "name": "@app-agent/organization",
+      "dependencies": {
+        "@app-agent/core": "workspace:*",
+      },
+      "devDependencies": {
+        "nuxt": "^4.3.0",
+        "typescript": "^5.9.3",
+      },
+    },
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
@@ -173,6 +184,8 @@
     "@app-agent/docs": ["@app-agent/docs@workspace:docs"],
 
     "@app-agent/docs-layer": ["@app-agent/docs-layer@workspace:core/docs"],
+
+    "@app-agent/organization": ["@app-agent/organization@workspace:organization"],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
 

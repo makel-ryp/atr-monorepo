@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  // Extend the core layer for shared components, composables, and config
-  extends: ['../../core'],
+  // Extend organization layer (which extends core)
+  extends: ['../../organization'],
 
   modules: [
     '@nuxt/eslint',

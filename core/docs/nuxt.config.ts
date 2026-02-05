@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url'
  * This is a Nuxt layer that provides the documentation infrastructure.
  * The actual docs app lives in /docs/ and extends this layer.
  *
+ * Inheritance chain:
+ *   /core → /organization → /core/docs → /docs
+ *
  * As a layer, this provides:
  * - Components (AppHeader, AppFooter, etc.)
  * - Layouts (docs layout)
@@ -16,6 +19,9 @@ import { fileURLToPath } from 'node:url'
  * - Upstream content (App Agent reference docs)
  */
 export default defineNuxtConfig({
+  // Extend organization layer (which extends core)
+  extends: [fileURLToPath(new URL('../../organization', import.meta.url))],
+
   // Alias for layer assets (required for CSS/assets to resolve correctly when extended)
   alias: {
     '#docs-layer': fileURLToPath(new URL('./', import.meta.url))

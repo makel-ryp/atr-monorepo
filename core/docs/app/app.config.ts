@@ -1,16 +1,14 @@
 /**
- * App Agent Documentation Configuration
+ * Documentation Layer Configuration
  *
- * This file controls branding, navigation, and links for the documentation site.
- * Customers can customize these values - minor merge conflicts on upstream updates
- * are expected and easy to resolve.
+ * Docs-specific settings. Branding (logo, colors, social links) comes from
+ * /organization/app/app.config.ts and flows through automatically.
+ *
+ * This layer adds docs-specific UI configuration.
  */
 export default defineAppConfig({
+  // Docs-specific UI settings
   ui: {
-    colors: {
-      primary: 'sky',
-      neutral: 'slate'
-    },
     footer: {
       slots: {
         root: 'border-t border-default',
@@ -18,60 +16,29 @@ export default defineAppConfig({
       }
     }
   },
-  seo: {
-    siteName: 'App Agent'
-  },
+
+  // Docs header configuration
   header: {
-    title: 'App Agent',
     to: '/',
-    logo: {
-      alt: 'App Agent',
-      light: '/logo-quarter.png',
-      dark: '/logo-quarter.png'
-    },
     search: true,
     colorMode: true,
-    // Set to false to hide the template switcher dropdown
-    showTemplateMenu: false,
-    // Header links (top right)
-    links: [{
-      'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/your-org/app-agent',
-      'target': '_blank',
-      'aria-label': 'GitHub'
-    }]
+    showTemplateMenu: false
   },
+
+  // Docs footer configuration
   footer: {
-    // Footer credits text
-    credits: `Built with App Agent • © ${new Date().getFullYear()}`,
-    colorMode: false,
-    // Footer social links
-    links: [{
-      'icon': 'i-simple-icons-discord',
-      'to': 'https://discord.gg/your-server',
-      'target': '_blank',
-      'aria-label': 'Discord'
-    }, {
-      'icon': 'i-simple-icons-x',
-      'to': 'https://x.com/your-handle',
-      'target': '_blank',
-      'aria-label': 'X (Twitter)'
-    }, {
-      'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/your-org/app-agent',
-      'target': '_blank',
-      'aria-label': 'GitHub'
-    }]
+    colorMode: false
   },
+
+  // Table of contents settings
   toc: {
     title: 'Table of Contents',
     bottom: {
       title: 'Resources',
-      // Set to null to hide the "Edit this page" link
       edit: null,
       links: [{
         icon: 'i-lucide-book-open',
-        label: 'App Agent Docs',
+        label: 'Documentation',
         to: '/internal/app-agent/getting-started',
         target: '_self'
       }]
