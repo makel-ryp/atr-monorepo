@@ -1,5 +1,26 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+
+/**
+ * App Agent Documentation Layer
+ *
+ * This is a Nuxt layer that provides the documentation infrastructure.
+ * The actual docs app lives in /docs/ and extends this layer.
+ *
+ * As a layer, this provides:
+ * - Components (AppHeader, AppFooter, etc.)
+ * - Layouts (docs layout)
+ * - Pages ([...slug].vue, index.vue)
+ * - Server routes (MCP tools, raw content)
+ * - Default app.config (branding, links)
+ * - Default public assets (logos)
+ * - Upstream content (App Agent reference docs)
+ */
 export default defineNuxtConfig({
+  // Alias for layer assets (required for CSS/assets to resolve correctly when extended)
+  alias: {
+    '#docs-layer': fileURLToPath(new URL('./', import.meta.url))
+  },
+
   modules: [
     '@nuxt/eslint',
     '@nuxt/image',
@@ -19,7 +40,8 @@ export default defineNuxtConfig({
     typeCheck: false
   },
 
-  css: ['~/assets/css/main.css'],
+  // CSS uses layer alias to resolve correctly when extended
+  css: ['#docs-layer/app/assets/css/main.css'],
 
   content: {
     build: {
@@ -29,9 +51,6 @@ export default defineNuxtConfig({
         }
       }
     }
-    // Multi-source content configured in content.config.ts:
-    // - /docs/internal/** → merges into /internal/ (alongside app-agent docs)
-    // - /docs/** (except internal) → top-level sections
   },
 
   experimental: {

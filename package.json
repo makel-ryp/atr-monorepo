@@ -5,6 +5,7 @@
     "apps/*",
     "core",
     "core/docs",
+    "docs",
     "demos/*",
     "packages/*"
   ],

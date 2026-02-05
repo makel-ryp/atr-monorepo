@@ -1,43 +1,70 @@
-# Customer Documentation
+# Documentation App
 
-This folder is for your company's documentation, integrated with the docs app at `localhost:3000`.
+This is your documentation app. It extends the `@app-agent/docs-layer` from `/core/docs/` and runs on `localhost:3000` during development.
 
-## How It Works
-
-Content you add here is automatically pulled into the documentation site:
-
-| You write to | Appears at URL |
-|--------------|----------------|
-| `/docs/internal/2.my-team/guide.md` | `/internal/my-team/guide` (alongside app-agent docs) |
-| `/docs/2.company/handbook.md` | `/company/handbook` (top-level section) |
-| `/docs/3.processes/onboarding.md` | `/processes/onboarding` (top-level section) |
-
-## Folder Structure
+## Structure
 
 ```
 /docs/
-├── internal/              # Merges into /internal/ section
-│   └── 2.your-team/       # Numbered for navigation order
-│       ├── 0.index.md     # Section landing page
-│       └── 1.guide.md     # Your content
+├── nuxt.config.ts      # App config - extends ../core/docs
+├── package.json        # App package - depends on @app-agent/docs-layer
+├── content.config.ts   # Content sources configuration
 │
-├── 2.company/             # Top-level section at /company/
-│   ├── 0.index.md
-│   └── handbook.md
+├── app/
+│   └── app.config.ts   # YOUR BRANDING - logos, social links, credits
 │
-└── 3.processes/           # Top-level section at /processes/
-    └── onboarding.md
+├── public/
+│   └── logo.png        # YOUR LOGO - place your logo files here
+│
+└── content/            # YOUR DOCUMENTATION
+    ├── internal/       # Merges into /internal/ section
+    │   └── 2.team/     # Alongside App Agent docs
+    └── 2.company/      # Top-level section at /company/
 ```
 
-## Numbering Convention
+## Customization
 
-Prefix folders and files with numbers to control navigation order:
-- `1.getting-started/` appears before `2.guides/`
-- `0.index.md` is the section landing page
-- Numbers are stripped from URLs (`2.company` → `/company`)
+### Branding
 
-## What NOT to Edit
+Edit `app/app.config.ts` to customize:
 
-The `/core/docs/content/internal/app-agent/` folder is upstream-maintained. Editing it will cause merge conflicts when you pull updates.
+```ts
+export default defineAppConfig({
+  seo: {
+    siteName: 'My Company Docs'
+  },
+  header: {
+    logo: {
+      light: '/logo.png',
+      dark: '/logo-dark.png'
+    }
+  },
+  footer: {
+    credits: 'Built by My Company',
+    links: [
+      { icon: 'i-simple-icons-github', to: 'https://github.com/mycompany' }
+    ]
+  }
+})
+```
 
-Write your internal docs to `/docs/internal/` instead - they appear in the same navigation but stay conflict-free.
+### Logo
+
+Place your logo in `public/`:
+- `public/logo.png` - Main logo
+- `public/logo-dark.png` - Dark mode variant (optional)
+
+### Documentation
+
+Add markdown files to `content/`:
+
+| Location | URL |
+|----------|-----|
+| `content/internal/2.team/guide.md` | `/internal/team/guide` |
+| `content/2.company/handbook.md` | `/company/handbook` |
+
+## Layer Benefits
+
+- **No merge conflicts**: Your customizations in `/docs/` never conflict with upstream updates
+- **Auto-updates**: Pull upstream changes to `/core/docs/` and get new features/fixes
+- **Full override**: Any file you add here takes precedence over the layer
