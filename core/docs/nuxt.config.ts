@@ -29,6 +29,9 @@ export default defineNuxtConfig({
         }
       }
     }
+    // TODO: Multi-source content from /docs/ folder
+    // Requires investigation to work properly with Nuxt UI Docs template collections
+    // For now, all content lives in core/docs/content/
   },
 
   experimental: {
@@ -62,32 +65,32 @@ export default defineNuxtConfig({
 
   llms: {
     domain: 'http://localhost:3000',
-    title: 'App Agent Documentation',
-    description: 'Documentation for the App Agent monorepo - a turnkey Nuxt 4 starter template.',
+    title: 'Documentation',
+    description: 'Project documentation with AI-native development support.',
     full: {
-      title: 'App Agent - Full Documentation',
-      description: 'Complete documentation for building apps with the App Agent template.'
+      title: 'Full Documentation',
+      description: 'Complete documentation including internal reference materials.'
     },
     sections: [
       {
-        title: 'Getting Started',
+        title: 'App Agent - Getting Started',
         contentCollection: 'docs',
         contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/getting-started%' }
+          { field: 'path', operator: 'LIKE', value: '/internal/app-agent/getting-started%' }
         ]
       },
       {
-        title: 'Demos',
+        title: 'App Agent - Demos',
         contentCollection: 'docs',
         contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/demos%' }
+          { field: 'path', operator: 'LIKE', value: '/internal/app-agent/demos%' }
         ]
       },
       {
-        title: 'Guides',
+        title: 'App Agent - AI Integration',
         contentCollection: 'docs',
         contentFilters: [
-          { field: 'path', operator: 'LIKE', value: '/guides%' }
+          { field: 'path', operator: 'LIKE', value: '/internal/app-agent/ai%' }
         ]
       }
     ]
