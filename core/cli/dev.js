@@ -105,10 +105,13 @@ async function copyDemo(demoId, appName) {
   console.log(`\nYour app will be available at http://localhost:3001`)
 }
 
-async function runTurbo(filter) {
+async function runTurbo(filters) {
   const args = ['run', 'dev']
-  if (filter) {
-    args.push(`--filter="${filter}"`)
+  if (filters) {
+    const filterList = Array.isArray(filters) ? filters : [filters]
+    for (const f of filterList) {
+      args.push(`--filter=${f}`)
+    }
   }
 
   const turbo = spawn('turbo', args, {
@@ -181,13 +184,14 @@ async function interactiveSetup() {
   } else if (choice === '2') {
     rl.close()
     console.log('')
-    console.log('  Starting all demos...')
+    console.log('  Starting docs + demos...')
     console.log('')
+    console.log('  Docs:      http://localhost:3000 (MCP server)')
     console.log('  Dashboard: http://localhost:3010')
     console.log('  SaaS:      http://localhost:3011')
     console.log('  Landing:   http://localhost:3012')
     console.log('')
-    await runTurbo('@app-agent/demo-*')
+    await runTurbo(['@app-agent/docs', '@app-agent/demo-*'])
 
   } else {
     rl.close()

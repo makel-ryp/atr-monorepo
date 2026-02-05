@@ -10,8 +10,8 @@
   ],
   "scripts": {
     "dev": "node core/cli/dev.js",
-    "dev:apps": "turbo run dev --filter=\"./apps/*\"",
-    "dev:demos": "turbo run dev --filter=\"@app-agent/demo-*\"",
+    "dev:apps": "turbo run dev --filter=@app-agent/docs --filter=\"./apps/*\"",
+    "dev:demos": "turbo run dev --filter=@app-agent/docs --filter=\"@app-agent/demo-*\"",
     "dev:docs": "turbo run dev --filter=@app-agent/docs",
     "dev:all": "turbo run dev",
     "build": "turbo run build --filter=\"./apps/*\"",

@@ -29,9 +29,9 @@ export default defineNuxtConfig({
         }
       }
     }
-    // TODO: Multi-source content from /docs/ folder
-    // Requires investigation to work properly with Nuxt UI Docs template collections
-    // For now, all content lives in core/docs/content/
+    // Multi-source content configured in content.config.ts:
+    // - /docs/internal/** → merges into /internal/ (alongside app-agent docs)
+    // - /docs/** (except internal) → top-level sections
   },
 
   experimental: {
