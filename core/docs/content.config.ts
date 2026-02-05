@@ -1,5 +1,8 @@
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineContentConfig, defineCollection, z } from '@nuxt/content'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const linksSchema = z.object({
   links: z.array(z.object({
