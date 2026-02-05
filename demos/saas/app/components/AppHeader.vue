@@ -1,27 +1,36 @@
 <script setup lang="ts">
 const nuxtApp = useNuxtApp()
+const { header } = useAppConfig()
 const { activeHeadings, updateHeadings } = useScrollspy()
 
-const items = computed(() => [{
-  label: 'Features',
-  to: '#features',
-  active: activeHeadings.value.includes('features') && !activeHeadings.value.includes('pricing')
-}, {
-  label: 'Pricing',
-  to: '#pricing',
-  active: activeHeadings.value.includes('pricing')
-}, {
-  label: 'Testimonials',
-  to: '#testimonials',
-  active: activeHeadings.value.includes('testimonials') && !activeHeadings.value.includes('pricing')
-}])
+const navigation = computed(() => header?.navigation ?? [
+  { label: 'Features', to: '#features' },
+  { label: 'Pricing', to: '#pricing' },
+  { label: 'Testimonials', to: '#testimonials' }
+])
+
+const cta = computed(() => header?.cta ?? { label: 'Download App' })
+
+const items = computed(() => navigation.value.map((item: { label: string, to: string }) => {
+  const id = item.to?.replace('#', '')
+  // Determine active state based on scrollspy for anchor links
+  let active = false
+  if (id && item.to?.startsWith('#')) {
+    // Use scrollspy logic for anchor links
+    const allIds = navigation.value.map((n: { to: string }) => n.to?.replace('#', '')).filter(Boolean)
+    const currentIndex = allIds.indexOf(id)
+    const nextId = allIds[currentIndex + 1]
+    active = activeHeadings.value.includes(id) && (!nextId || !activeHeadings.value.includes(nextId))
+  }
+  return { ...item, active }
+}))
 
 nuxtApp.hooks.hookOnce('page:finish', () => {
-  updateHeadings([
-    document.querySelector('#features'),
-    document.querySelector('#pricing'),
-    document.querySelector('#testimonials')
-  ].filter(Boolean) as Element[])
+  const anchors = navigation.value
+    .filter((item: { to: string }) => item.to?.startsWith('#'))
+    .map((item: { to: string }) => document.querySelector(item.to))
+    .filter(Boolean) as Element[]
+  updateHeadings(anchors)
 })
 </script>
 
@@ -29,10 +38,8 @@ nuxtApp.hooks.hookOnce('page:finish', () => {
   <UHeader>
     <template #left>
       <NuxtLink to="/">
-        <AppLogo class="w-auto h-6 shrink-0" />
+        <AppLogo class="w-auto h-3 shrink-0" />
       </NuxtLink>
-
-      <TemplateMenu />
     </template>
 
     <template #right>
@@ -43,7 +50,8 @@ nuxtApp.hooks.hookOnce('page:finish', () => {
       />
 
       <UButton
-        label="Download App"
+        :label="cta.label"
+        :to="cta.to"
         variant="subtle"
         class="hidden lg:block"
       />
@@ -59,7 +67,8 @@ nuxtApp.hooks.hookOnce('page:finish', () => {
       />
       <UButton
         class="mt-4"
-        label="Download App"
+        :label="cta.label"
+        :to="cta.to"
         variant="subtle"
         block
       />

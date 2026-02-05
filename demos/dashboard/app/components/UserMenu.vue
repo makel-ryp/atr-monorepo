@@ -7,6 +7,7 @@ defineProps<{
 
 const colorMode = useColorMode()
 const appConfig = useAppConfig()
+const { dashboard } = appConfig
 
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
@@ -19,21 +20,24 @@ const user = ref({
   }
 })
 
+const userMenuConfig = computed(() => dashboard?.userMenu ?? {
+  items: [
+    { label: 'Profile', icon: 'i-lucide-user' },
+    { label: 'Billing', icon: 'i-lucide-credit-card' },
+    { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
+  ],
+  externalLinks: [
+    { label: 'Documentation', icon: 'i-lucide-book-open', to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt', target: '_blank' },
+    { label: 'GitHub repository', icon: 'i-simple-icons-github', to: 'https://github.com/nuxt-ui-templates/dashboard', target: '_blank' }
+  ],
+  logoutLabel: 'Log out'
+})
+
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: user.value.name,
   avatar: user.value.avatar
-}], [{
-  label: 'Profile',
-  icon: 'i-lucide-user'
-}, {
-  label: 'Billing',
-  icon: 'i-lucide-credit-card'
-}, {
-  label: 'Settings',
-  icon: 'i-lucide-settings',
-  to: '/settings'
-}], [{
+}], userMenuConfig.value.items, [{
   label: 'Theme',
   icon: 'i-lucide-palette',
   children: [{
@@ -135,20 +139,13 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     label: 'Changelog',
     to: 'https://changelog-template.nuxt.dev/'
   }]
-}], [{
-  label: 'Documentation',
-  icon: 'i-lucide-book-open',
-  to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-  target: '_blank'
-}, {
-  label: 'GitHub repository',
-  icon: 'i-simple-icons-github',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
-  target: '_blank'
-}, {
-  label: 'Log out',
-  icon: 'i-lucide-log-out'
-}]]))
+}], [
+  ...userMenuConfig.value.externalLinks,
+  {
+    label: userMenuConfig.value.logoutLabel ?? 'Log out',
+    icon: 'i-lucide-log-out'
+  }
+]]))
 </script>
 
 <template>

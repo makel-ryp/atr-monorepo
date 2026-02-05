@@ -5,25 +5,29 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-const teams = ref([{
-  label: 'Nuxt',
+const { dashboard } = useAppConfig()
+
+const defaultTeams = [{
+  label: 'Acme Corp',
   avatar: {
-    src: 'https://github.com/nuxt.png',
-    alt: 'Nuxt'
+    src: 'https://api.dicebear.com/7.x/identicon/svg?seed=acme',
+    alt: 'Acme Corp'
   }
 }, {
-  label: 'NuxtHub',
+  label: 'Acme Labs',
   avatar: {
-    src: 'https://github.com/nuxt-hub.png',
-    alt: 'NuxtHub'
+    src: 'https://api.dicebear.com/7.x/identicon/svg?seed=labs',
+    alt: 'Acme Labs'
   }
 }, {
-  label: 'NuxtLabs',
+  label: 'Acme Studio',
   avatar: {
-    src: 'https://github.com/nuxtlabs.png',
-    alt: 'NuxtLabs'
+    src: 'https://api.dicebear.com/7.x/identicon/svg?seed=studio',
+    alt: 'Acme Studio'
   }
-}])
+}]
+
+const teams = ref(dashboard?.teams ?? defaultTeams)
 const selectedTeam = ref(teams.value[0])
 
 const items = computed<DropdownMenuItem[][]>(() => {

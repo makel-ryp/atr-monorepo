@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { seo, brand } = useAppConfig()
 const colorMode = useColorMode()
 
 const color = computed(() => colorMode.value === 'dark' ? '#171717' : 'white')
@@ -17,8 +18,7 @@ useHead({
 })
 
 useSeoMeta({
-  ogImage: 'https://ui.nuxt.com/assets/templates/nuxt/landing-light.png',
-  twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/landing-light.png',
+  titleTemplate: `%s - ${seo?.siteName || brand?.name || 'App'}`,
   twitterCard: 'summary_large_image'
 })
 </script>

@@ -1,29 +1,27 @@
 <script setup lang="ts">
 const route = useRoute()
+const { header } = useAppConfig()
 
-const items = computed(() => [{
-  label: 'Docs',
-  to: '/docs',
-  active: route.path.startsWith('/docs')
-}, {
-  label: 'Pricing',
-  to: '/pricing'
-}, {
-  label: 'Blog',
-  to: '/blog'
-}, {
-  label: 'Changelog',
-  to: '/changelog'
-}])
+const items = computed(() => {
+  const nav = header?.navigation ?? [
+    { label: 'Docs', to: '/docs' },
+    { label: 'Pricing', to: '/pricing' },
+    { label: 'Blog', to: '/blog' },
+    { label: 'Changelog', to: '/changelog' }
+  ]
+  return nav.map((item: { label: string, to: string }) => ({
+    ...item,
+    active: item.to && route.path.startsWith(item.to)
+  }))
+})
 </script>
 
 <template>
   <UHeader>
     <template #left>
       <NuxtLink to="/">
-        <AppLogo class="w-auto h-6 shrink-0" />
+        <AppLogo class="w-auto h-3 shrink-0" />
       </NuxtLink>
-      <TemplateMenu />
     </template>
 
     <UNavigationMenu

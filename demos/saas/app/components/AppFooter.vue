@@ -1,38 +1,24 @@
 <script setup lang="ts">
-const columns = [{
+const { footer } = useAppConfig()
+
+const columns = computed(() => footer?.columns ?? [{
   label: 'Resources',
-  children: [{
-    label: 'Help center'
-  }, {
-    label: 'Docs'
-  }, {
-    label: 'Roadmap'
-  }, {
-    label: 'Changelog'
-  }]
+  children: [{ label: 'Help center' }, { label: 'Docs' }, { label: 'Roadmap' }, { label: 'Changelog' }]
 }, {
   label: 'Features',
-  children: [{
-    label: 'Affiliates'
-  }, {
-    label: 'Portal'
-  }, {
-    label: 'Jobs'
-  }, {
-    label: 'Sponsors'
-  }]
+  children: [{ label: 'Affiliates' }, { label: 'Portal' }, { label: 'Jobs' }, { label: 'Sponsors' }]
 }, {
   label: 'Company',
-  children: [{
-    label: 'About'
-  }, {
-    label: 'Pricing'
-  }, {
-    label: 'Careers'
-  }, {
-    label: 'Blog'
-  }]
-}]
+  children: [{ label: 'About' }, { label: 'Pricing' }, { label: 'Careers' }, { label: 'Blog' }]
+}])
+
+const newsletter = computed(() => footer?.newsletter ?? {
+  label: 'Subscribe to our newsletter',
+  placeholder: 'Enter your email',
+  buttonText: 'Subscribe',
+  successTitle: 'Subscribed!',
+  successMessage: "You've been subscribed to our newsletter."
+})
 
 const toast = useToast()
 
@@ -43,17 +29,14 @@ function onSubmit() {
   loading.value = true
 
   toast.add({
-    title: 'Subscribed!',
-    description: 'You\'ve been subscribed to our newsletter.'
+    title: newsletter.value.successTitle,
+    description: newsletter.value.successMessage
   })
 }
 </script>
 
 <template>
-  <USeparator
-    icon="i-simple-icons-nuxtdotjs"
-    class="h-px"
-  />
+  <USeparator class="h-px" />
 
   <UFooter :ui="{ top: 'border-b border-default' }">
     <template #top>
@@ -63,20 +46,20 @@ function onSubmit() {
             <form @submit.prevent="onSubmit">
               <UFormField
                 name="email"
-                label="Subscribe to our newsletter"
+                :label="newsletter.label"
                 size="lg"
               >
                 <UInput
                   v-model="email"
                   type="email"
                   class="w-full"
-                  placeholder="Enter your email"
+                  :placeholder="newsletter.placeholder"
                 >
                   <template #trailing>
                     <UButton
                       type="submit"
                       size="xs"
-                      label="Subscribe"
+                      :label="newsletter.buttonText"
                     />
                   </template>
                 </UInput>
@@ -89,32 +72,15 @@ function onSubmit() {
 
     <template #left>
       <p class="text-sm text-muted">
-        Built with Nuxt UI • © {{ new Date().getFullYear() }}
+        {{ footer?.credits || `© ${new Date().getFullYear()}` }}
       </p>
     </template>
 
     <template #right>
       <UButton
-        to="https://go.nuxt.com/discord"
-        target="_blank"
-        icon="i-simple-icons-discord"
-        aria-label="Nuxt on Discord"
-        color="neutral"
-        variant="ghost"
-      />
-      <UButton
-        to="https://go.nuxt.com/x"
-        target="_blank"
-        icon="i-simple-icons-x"
-        aria-label="Nuxt on X"
-        color="neutral"
-        variant="ghost"
-      />
-      <UButton
-        to="https://github.com/nuxt-ui-templates/landing"
-        target="_blank"
-        icon="i-simple-icons-github"
-        aria-label="Nuxt UI on GitHub"
+        v-for="(link, index) in footer?.links"
+        :key="index"
+        v-bind="link"
         color="neutral"
         variant="ghost"
       />

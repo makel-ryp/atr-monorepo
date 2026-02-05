@@ -6,14 +6,48 @@ definePageMeta({
   layout: 'auth'
 })
 
-useSeoMeta({
-  title: 'Login',
-  description: 'Login to your account to continue'
-})
-
+const { auth } = useAppConfig()
 const toast = useToast()
 
-const fields = [{
+const loginConfig = computed(() => auth?.login ?? {
+  title: 'Welcome back',
+  icon: 'i-lucide-lock',
+  description: "Don't have an account?",
+  descriptionLink: { label: 'Sign up', to: '/signup' },
+  forgotPasswordLink: { label: 'Forgot password?', to: '/' },
+  termsText: 'By signing in, you agree to our',
+  termsLink: { label: 'Terms of Service', to: '/' },
+  submitLabel: 'Sign in',
+  fields: [{
+    name: 'email',
+    type: 'text',
+    label: 'Email',
+    placeholder: 'Enter your email',
+    required: true
+  }, {
+    name: 'password',
+    label: 'Password',
+    type: 'password',
+    placeholder: 'Enter your password'
+  }, {
+    name: 'remember',
+    label: 'Remember me',
+    type: 'checkbox'
+  }],
+  seo: {
+    title: 'Login',
+    description: 'Login to your account to continue'
+  }
+})
+
+const seoConfig = computed(() => loginConfig.value.seo ?? { title: 'Login', description: 'Login to your account to continue' })
+
+useSeoMeta({
+  title: seoConfig.value.title,
+  description: seoConfig.value.description
+})
+
+const fields = computed(() => loginConfig.value.fields ?? [{
   name: 'email',
   type: 'text' as const,
   label: 'Email',
@@ -28,21 +62,20 @@ const fields = [{
   name: 'remember',
   label: 'Remember me',
   type: 'checkbox' as const
-}]
+}])
 
-const providers = [{
-  label: 'Google',
-  icon: 'i-simple-icons-google',
+const configProviders = computed(() => auth?.providers ?? [
+  { label: 'Google', icon: 'i-simple-icons-google', id: 'google' },
+  { label: 'GitHub', icon: 'i-simple-icons-github', id: 'github' }
+])
+
+const providers = computed(() => configProviders.value.map((p: { label: string, icon: string, id: string }) => ({
+  label: p.label,
+  icon: p.icon,
   onClick: () => {
-    toast.add({ title: 'Google', description: 'Login with Google' })
+    toast.add({ title: p.label, description: `Login with ${p.label}` })
   }
-}, {
-  label: 'GitHub',
-  icon: 'i-simple-icons-github',
-  onClick: () => {
-    toast.add({ title: 'GitHub', description: 'Login with GitHub' })
-  }
-}]
+})))
 
 const schema = z.object({
   email: z.email('Invalid email'),
@@ -61,30 +94,30 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
     :fields="fields"
     :schema="schema"
     :providers="providers"
-    title="Welcome back"
-    icon="i-lucide-lock"
+    :title="loginConfig.title"
+    :icon="loginConfig.icon"
     @submit="onSubmit"
   >
     <template #description>
-      Don't have an account? <ULink
-        to="/signup"
+      {{ loginConfig.description }} <ULink
+        :to="loginConfig.descriptionLink?.to ?? '/signup'"
         class="text-primary font-medium"
-      >Sign up</ULink>.
+      >{{ loginConfig.descriptionLink?.label ?? 'Sign up' }}</ULink>.
     </template>
 
     <template #password-hint>
       <ULink
-        to="/"
+        :to="loginConfig.forgotPasswordLink?.to ?? '/'"
         class="text-primary font-medium"
         tabindex="-1"
-      >Forgot password?</ULink>
+      >{{ loginConfig.forgotPasswordLink?.label ?? 'Forgot password?' }}</ULink>
     </template>
 
     <template #footer>
-      By signing in, you agree to our <ULink
-        to="/"
+      {{ loginConfig.termsText }} <ULink
+        :to="loginConfig.termsLink?.to ?? '/'"
         class="text-primary font-medium"
-      >Terms of Service</ULink>.
+      >{{ loginConfig.termsLink?.label ?? 'Terms of Service' }}</ULink>.
     </template>
   </UAuthForm>
 </template>

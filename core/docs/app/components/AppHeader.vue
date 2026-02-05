@@ -26,7 +26,7 @@ const { header } = useAppConfig()
         :light="header?.logo?.light!"
         :dark="header?.logo?.dark!"
         :alt="header?.logo?.alt"
-        class="h-6 w-auto shrink-0"
+        class="h-3 w-auto shrink-0"
       />
 
       <span v-else-if="header?.title">
@@ -39,7 +39,7 @@ const { header } = useAppConfig()
       #left
     >
       <NuxtLink :to="header?.to || '/'">
-        <AppLogo class="w-auto h-6 shrink-0" />
+        <AppLogo class="w-auto h-3 shrink-0" />
       </NuxtLink>
 
       <TemplateMenu v-if="header?.showTemplateMenu" />
