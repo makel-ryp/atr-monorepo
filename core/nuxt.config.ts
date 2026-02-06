@@ -54,6 +54,6 @@ export default defineNuxtConfig({
     typedPages: true
   },
 
-  // Enable devtools for development
+  // Enable Nuxt devtools for development
   devtools: { enabled: true }
 })
