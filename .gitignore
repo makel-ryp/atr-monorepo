@@ -40,3 +40,5 @@ packages/*/bun.lock
 
 # Vercel
 .vercel/
+
+demos/chat/.data

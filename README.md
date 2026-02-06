@@ -105,6 +105,7 @@ All apps automatically inherit these settings.
 | Dashboard Demo | 3010 | Internal tools, admin panels, analytics |
 | SaaS Demo | 3011 | Customer-facing application patterns |
 | Landing Demo | 3012 | Marketing sites, landing pages |
+| Chat Demo | 3013 | AI chatbot with persistent history |
 
 ## Available Scripts
 

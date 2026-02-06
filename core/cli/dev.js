@@ -35,6 +35,12 @@ const DEMOS = [
     name: 'Landing',
     description: 'Marketing sites and documentation',
     port: 3012
+  },
+  {
+    id: 'chat',
+    name: 'Chat',
+    description: 'AI chatbot with persistent history',
+    port: 3013
   }
 ]
 
@@ -156,7 +162,7 @@ async function interactiveSetup() {
     })
     console.log('')
 
-    const demoChoice = await question(rl, '  Which demo? (1-3): ')
+    const demoChoice = await question(rl, `  Which demo? (1-${DEMOS.length}): `)
     const demoIndex = parseInt(demoChoice, 10) - 1
 
     if (demoIndex < 0 || demoIndex >= DEMOS.length) {
@@ -190,6 +196,7 @@ async function interactiveSetup() {
     console.log('  Dashboard: http://localhost:3010')
     console.log('  SaaS:      http://localhost:3011')
     console.log('  Landing:   http://localhost:3012')
+    console.log('  Chat:      http://localhost:3013')
     console.log('')
     await runTurbo(['@app-agent/docs', '@app-agent/demo-*'])
 

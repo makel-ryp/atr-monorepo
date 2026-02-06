@@ -221,6 +221,7 @@ export default defineNuxtConfig({
 | Dashboard Demo | 3010 | Admin panels, internal tools |
 | SaaS Demo | 3011 | Customer-facing app patterns |
 | Landing Demo | 3012 | Marketing sites |
+| Chat Demo | 3013 | AI chatbot with history |
 
 ---
 
