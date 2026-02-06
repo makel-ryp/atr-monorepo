@@ -21,54 +21,90 @@ bun install
 bun run dev
 ```
 
-If `/apps/` is empty, you'll be guided to copy a demo as your starting point.
+### First-Run Experience
+
+If `/apps/` is empty, the smart launcher guides you through setup:
+
+1. **Choose an option:**
+   - Copy a demo to start your first app
+   - Run demos to explore first
+   - Exit
+
+2. **If copying a demo:**
+   - Select which demo to copy (dashboard, saas, or landing)
+   - Enter a name for your app
+   - The demo is copied to `/apps/<your-name>/`
+   - Package.json is updated with your app name
+   - Development server starts automatically
 
 ## Project Structure
 
 ```
 app-agent/
 ├── core/                  # Shared Nuxt layer (upstream maintained)
-│   ├── app/               # Shared components, composables
-│   ├── cli/               # Dev tooling
-│   └── docs/              # Documentation with MCP server
-│       └── content/       # Add your docs here
+│   ├── app/               # Shared components, composables, layouts
+│   ├── cli/               # Dev tooling (smart launcher)
+│   ├── server/            # Shared server utilities
+│   └── docs/              # Documentation layer
+│       ├── content/       # App Agent reference docs (read-only)
+│       ├── adr/           # Architecture Decision Records
+│       └── server/mcp/    # MCP server and tools
+├── organization/          # YOUR company branding layer
+│   ├── app/               # Brand config (app.config.ts)
+│   └── public/            # Company assets (logos, etc.)
+├── docs/                  # YOUR documentation app
+│   ├── content/           # Add your docs here
+│   └── app/               # Your doc site customizations
 ├── demos/                 # Reference implementations
 │   ├── dashboard/         # Internal tools, admin panels (port 3010)
 │   ├── saas/              # Customer-facing app patterns (port 3011)
 │   └── landing/           # Marketing sites (port 3012)
-├── apps/                  # Your applications
-├── packages/              # Optional shared packages
-└── documentation/         # Architecture Decision Records
+├── apps/                  # Your applications (port 3001+)
+└── packages/              # Optional shared packages
 ```
 
-## How It Works
+## The Layering System
 
-### For Customers
-
-1. **Fork this repo** - It becomes yours
-2. **Run `bun run dev`** - Interactive setup guides you
-3. **Copy a demo** - Start with a working pattern
-4. **Build your product** - AI agent helps you build
-5. **Pull upstream updates** - Get improvements without merge conflicts
-
-### The Layering System
+App Agent uses a three-layer inheritance model:
 
 ```
-CORE (maintained upstream)
+CORE (maintained upstream - don't modify)
 ├── Shared components and composables
 ├── Documentation infrastructure
 └── AI integration (MCP)
          │
-    fork + pull upstream
+         ▼
+ORGANIZATION (your company branding)
+├── Brand name, logo, colors
+├── Social links
+└── Company-wide defaults
          │
          ▼
-YOUR REPO (your GitHub)
-├── Your apps in /apps/
-├── Your docs in /core/docs/content/
-└── Your customizations
+YOUR APPS (your code)
+├── /apps/* - Your applications
+├── /docs/ - Your documentation
+└── /demos/* - Reference implementations
 ```
 
-Your code stays isolated. Pull upstream updates cleanly.
+### Customizing Your Brand
+
+Edit `/organization/app/app.config.ts` to set:
+- Company name and logo
+- Brand colors
+- Social media links
+- Default UI settings
+
+All apps automatically inherit these settings.
+
+## Port Allocation
+
+| App | Port | Description |
+|-----|------|-------------|
+| Docs | 3000 | Documentation site with MCP server |
+| Your Apps | 3001+ | Customer applications in /apps/ |
+| Dashboard Demo | 3010 | Internal tools, admin panels, analytics |
+| SaaS Demo | 3011 | Customer-facing application patterns |
+| Landing Demo | 3012 | Marketing sites, landing pages |
 
 ## Available Scripts
 
@@ -81,28 +117,26 @@ Your code stays isolated. Pull upstream updates cleanly.
 | `bun run build` | Build your apps for production |
 | `bun run typecheck` | Run TypeScript type checking |
 
-## Demos
-
-| Demo | Port | Description |
-|------|------|-------------|
-| Dashboard | 3010 | Internal tools, admin panels, analytics |
-| SaaS | 3011 | Customer-facing application patterns |
-| Landing | 3012 | Marketing sites, documentation |
-
 ## AI-Native Development
 
 ### MCP Server
 
-The docs include an MCP server that enables AI assistants to:
-- Query documentation
-- Introspect the codebase structure
-- Read source files
-- Understand your apps and demos
+The docs include an MCP server that enables AI assistants to understand and work with your codebase.
 
 ```bash
 # Add to Claude Code
 claude mcp add --transport http app-agent-docs http://localhost:3000/mcp
 ```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `list-apps` | Shows all apps and demos with metadata |
+| `list-components` | Lists components, pages, composables in any app |
+| `get-file` | Returns source code of any file |
+| `get-page` | Retrieves documentation content |
+| `list-pages` | Lists all routes in an app |
 
 ### Why the AI Works
 
@@ -117,6 +151,50 @@ App Agent's AI succeeds because:
 - Demos provide working examples to copy
 
 **The AI isn't smarter. The codebase is smarter.**
+
+## Shared Utilities
+
+### useApi Composable
+
+All apps have access to a shared HTTP client:
+
+```typescript
+const { get, post, put, delete: del } = useApi()
+
+// Usage
+const users = await get<User[]>('/users')
+const created = await post<User>('/users', { name: 'John' })
+```
+
+Configure the API base URL via `NUXT_PUBLIC_API_BASE` environment variable.
+
+## Documentation System
+
+### Adding Your Docs
+
+Place your documentation in `/docs/content/`:
+
+```
+docs/content/
+├── internal/              # Merges into /internal/ section
+│   └── 2.my-team/         # Your internal docs
+└── 2.company/             # New top-level section
+    └── 1.handbook.md
+```
+
+### Navigation
+
+- Numbered prefixes control order (e.g., `1.getting-started/`, `2.guides/`)
+- Use `index.md` or `0.index.md` for section landing pages
+- Your docs appear alongside App Agent reference docs
+
+### Content Collections
+
+| Collection | Purpose |
+|------------|---------|
+| `docs` | App Agent reference docs (from /core/docs) |
+| `customerInternal` | Your internal docs (merges into /internal/) |
+| `customerDocs` | Your top-level doc sections |
 
 ## Technology Stack
 
@@ -134,7 +212,7 @@ Staff augmentation and expert guidance available. See documentation for details.
 ## Learn More
 
 - **Documentation:** Run `bun run dev` → http://localhost:3000
-- **ADRs:** See `/documentation/ADR/` for architecture decisions
+- **ADRs:** See `/core/docs/adr/` for architecture decisions
 
 ## License
 
