@@ -3,6 +3,8 @@
 ## Status
 **Proposed**
 
+> **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-tenant overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags have been extracted to [ADR-006](./006-feature-flag-system.md).
+
 ## Date
 2026-02-06
 
@@ -10,7 +12,7 @@
 
 This project uses a layered Nuxt 4 monorepo architecture (see [ADR-002](./002-monorepo-architecture.md)). As we build out the platform, we need a formal understanding of how configuration, components, composables, server middleware, and services cascade across layers — and how to harness that cascade for cross-cutting concerns like internationalization, logging, health checks, rate limiting, and runtime configuration overrides.
 
-This ADR captures the merge semantics, establishes patterns, identifies edge cases, and designs forward-looking architecture for a control plane and runtime overrides.
+This ADR captures the merge semantics, establishes patterns, identifies edge cases, and provides build-time configuration guidance. Runtime configuration (hot-reloadable settings, per-tenant overrides, control plane) is covered separately in [ADR-005](./005-runtime-configuration-service.md).
 
 ### Terminology
 
@@ -646,32 +648,64 @@ These custom checks follow the spec's extensibility model (any key in the `check
 
 ---
 
-## Part 6: Runtime Configuration and the Control Plane
+## Part 6: Build-Time Configuration Guidance
 
-### The Configuration Hierarchy
+This section covers how configuration is structured at **build time** — the values baked into `nuxt.config.ts` and `app.config.ts` via the layer cascade, and the startup-time environment variable overrides that Nuxt applies at process start.
 
-Configuration flows through four tiers, from build-time to runtime:
+> **Note:** Runtime configuration (per-tenant overrides, control plane, live settings changes) is defined in [ADR-005](./005-runtime-configuration-service.md). Feature flags are defined in ADR-006.
+
+### Two Tiers of Build-Time Configuration
 
 ```
 Tier 1: Source Code (build-time, immutable after deploy)
-  └─ nuxt.config.ts, app.config.ts — merged via defu at build time
-  └─ Translation files (i18n/locales/*.json) — bundled at build time
+  - nuxt.config.ts, app.config.ts — merged via defu at build time
+  - Translation files (i18n/locales/*.json) — bundled at build time
+  - Environment-specific builds via $production, $development, $env
 
-Tier 2: Environment Variables (deploy-time, requires restart)
-  └─ NUXT_* env vars — override runtimeConfig values at process start
-  └─ Set via Docker, K8s ConfigMap/Secret, systemd, etc.
-
-Tier 3: Feature Flags (runtime, no restart)
-  └─ OpenFeature-compatible flag service (Flagsmith, Unleash)
-  └─ Boolean toggles, percentage rollouts, user targeting
-  └─ Read via composable or server middleware
-
-Tier 4: Control Plane Overrides (runtime, per-tenant, no restart)
-  └─ /control app reads/writes tenant configuration
-  └─ Stored in database, served via /api/settings/:appName
-  └─ Applied per-request based on tenant context (JWT, subdomain)
-  └─ Includes: i18n overrides, UI layout, feature entitlements, rate limits
+Tier 2: Startup Environment Variables (process start, cached for lifetime)
+  - NUXT_* env vars — override runtimeConfig values at process start
+  - Set via Docker, K8s ConfigMap/Secret, systemd, etc.
+  - Read once at startup, cached via a mutable getter
 ```
+
+### Understanding Nuxt 4's `runtimeConfig`
+
+Despite its name, Nuxt 4's `runtimeConfig` is really **startup config**. Environment variables prefixed with `NUXT_` are read once when the Nitro server process starts and are cached for the lifetime of that process. The values are exposed through a mutable getter (not `Object.freeze`), but the Nuxt documentation treats them as read-only and they are not designed to be mutated after startup.
+
+**Key implications:**
+
+- `runtimeConfig` values do **not** change while the process is running
+- Changing a `NUXT_*` environment variable requires a **process restart** to take effect
+- `runtimeConfig` is for **provisioning** concerns: database connection strings, API URLs, port numbers, external service credentials
+- `runtimeConfig` is **not** for application-level configuration that needs to change at runtime (use [ADR-005](./005-runtime-configuration-service.md) for that)
+
+### Environment-Specific Builds
+
+Nuxt 4 provides `$production`, `$development`, and `$env` overrides within `nuxt.config.ts` for environment-specific build-time configuration:
+
+```typescript
+export default defineNuxtConfig({
+  runtimeConfig: {
+    logging: { level: 'info' }
+  },
+  $production: {
+    runtimeConfig: { logging: { level: 'warn' } }
+  },
+  $development: {
+    runtimeConfig: { logging: { level: 'debug' } }
+  },
+  $env: {
+    staging: {
+      runtimeConfig: {
+        logging: { level: 'info' },
+        public: { apiBase: 'https://staging-api.example.com' }
+      }
+    }
+  }
+})
+```
+
+These overrides are resolved at **build time** and become part of the built artifact. They follow the same `defu` merge rules as layer configuration.
 
 ### `runtimeConfig` vs `app.config` — When to Use Which
 
@@ -680,122 +714,16 @@ Tier 4: Control Plane Overrides (runtime, per-tenant, no restart)
 | API keys, secrets | `runtimeConfig` (private) | Server-only, env var overridable |
 | API base URLs | `runtimeConfig.public` | Differs per environment |
 | Theme colors, UI settings | `app.config` | Build-time, reactive on client |
-| Feature flags | `runtimeConfig.public` + composable | Needs to be reactive |
 | i18n default locale | `i18n` config in `nuxt.config.ts` | Module-specific |
 | Logging destination | `runtimeConfig` (private) | Server-only, env var overridable |
 | Rate limit thresholds | `runtimeConfig` (private) | Server-only, per-environment |
+| Database connection string | `runtimeConfig` (private) | Provisioning concern |
+| Feature flags | See ADR-006 | Requires runtime evaluation |
+| Per-tenant settings | See [ADR-005](./005-runtime-configuration-service.md) | Requires runtime service |
 
-### The `/settings` API Endpoint
+### What `runtimeConfig` Is NOT For
 
-Core provides a server route that returns the **merged effective configuration** for any app, combining all four tiers:
-
-```typescript
-// core/server/api/settings/[appName].get.ts
-export default defineEventHandler(async (event) => {
-  const appName = getRouterParam(event, 'appName')
-
-  // Tier 1+2: runtimeConfig (already merged by Nuxt/Nitro)
-  const baseConfig = useRuntimeConfig(event).public
-
-  // Tier 3: Feature flags
-  const features = await getFeatureFlags(event)
-
-  // Tier 4: Control plane overrides (per-tenant if applicable)
-  const tenant = event.context.tenant
-  const overrides = tenant
-    ? await getControlPlaneOverrides(tenant.id, appName)
-    : {}
-
-  // Merge: overrides win over features win over base
-  return defu(overrides, features, baseConfig)
-})
-```
-
-This endpoint is what the `/control` app reads to show DevOps teams the **effective configuration** for each deployed app.
-
-### The `/control` App
-
-`/control` is a special Nuxt app in the monorepo, similar to `/docs`:
-
-```
-control/
-  app/
-    pages/
-      index.vue            ← Dashboard: overview of all deployed apps
-      apps/[name].vue      ← Per-app config viewer/editor
-      tenants/[id].vue     ← Per-tenant settings
-      i18n.vue             ← i18n override manager
-      features.vue         ← Feature flag manager
-    composables/
-      useControlPlane.ts   ← API client for /api/settings/*
-  nuxt.config.ts           ← extends: ['../organization']
-  package.json
-```
-
-What DevOps can do:
-- **Browse** all deployed apps and their effective configuration
-- **Override** i18n strings at runtime (stored in database, served via Tier 4)
-- **Toggle** features per tenant or globally
-- **View** health status of all nodes (reading `/health` from each)
-- **Inspect** the layer cascade — see what core provides, what org overrides, what the app changes
-- **Chat with AI** about configuration changes (via MCP integration with docs)
-
-### Runtime i18n Overrides (Without Redeployment)
-
-The control plane can override translation strings at runtime:
-
-```typescript
-// core/app/plugins/i18n-overrides.client.ts
-export default defineNuxtPlugin(async (nuxtApp) => {
-  const i18n = nuxtApp.$i18n
-  const config = useRuntimeConfig()
-
-  // Fetch runtime overrides from the settings API
-  const overrides = await $fetch(`${config.public.apiBase}/settings/i18n-overrides`)
-
-  if (overrides) {
-    // Merge overrides into each locale's messages
-    for (const [locale, messages] of Object.entries(overrides)) {
-      i18n.mergeLocaleMessage(locale, messages)
-    }
-  }
-})
-```
-
-This allows DevOps to change any translation string via the control plane UI without touching source code or redeploying. The override is fetched at app startup (or periodically) and merged on top of the build-time translations.
-
-### How a Deployed Node Sees Its Configuration
-
-```
-                    ┌────────────────────────────────────────┐
-                    │           DEPLOYED NODE                 │
-                    │                                         │
-Source Code ───────►│  nuxt.config merge (defu)              │
-(build artifact)    │    core + org + app configs             │
-                    │              │                          │
-                    │              ▼                          │
-Env Variables ─────►│  runtimeConfig override                │
-(deploy target)     │    NUXT_* env vars applied             │
-                    │              │                          │
-                    │              ▼                          │
-Feature Flags ─────►│  OpenFeature SDK evaluation            │
-(flag service)      │    per-request flag values             │
-                    │              │                          │
-                    │              ▼                          │
-Control Plane ─────►│  Tenant config override                │
-(database/API)      │    per-tenant settings applied         │
-                    │              │                          │
-                    │              ▼                          │
-                    │  ┌─────────────────────────────┐       │
-                    │  │ EFFECTIVE CONFIGURATION      │       │
-                    │  │ (what the app actually uses) │       │
-                    │  └─────────────────────────────┘       │
-                    │              │                          │
-                    │              ▼                          │
-                    │  GET /health → reports all of this     │
-                    │  GET /api/settings/myapp → returns it  │
-                    └────────────────────────────────────────┘
-```
+Environment variables and `runtimeConfig` are the correct mechanism for **provisioning**. They are the wrong mechanism for **application configuration** that needs to change without restarting the process, vary per tenant or per user, be toggled by non-developers, or support gradual rollouts. These concerns are addressed by [ADR-005](./005-runtime-configuration-service.md) and ADR-006.
 
 ---
 
@@ -870,7 +798,9 @@ Layers must be "prepared" before consuming apps can build. Turborepo handles thi
 
 ## Part 8: The Docs App as Configuration Inspector
 
-The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md)) already provides MCP tools for codebase introspection. We extend this to include configuration introspection:
+The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md)) already provides MCP tools for codebase introspection. We extend this to include build-time configuration introspection.
+
+> **Note:** Runtime configuration introspection tools (live settings, per-tenant overrides, control plane dashboards) are defined in [ADR-005](./005-runtime-configuration-service.md).
 
 ### New MCP Tools for Configuration
 
@@ -882,70 +812,21 @@ The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md))
 | `get-component-registry` | Lists all auto-imported components with their source layer |
 | `get-composable-registry` | Lists all auto-imported composables with their source layer |
 
-### Source Attribution
-
-For developers to understand what's coming from where, the docs app can trace each value back to its source:
-
-```json
-{
-  "key": "runtimeConfig.rateLimiter.tokensPerInterval",
-  "effectiveValue": 1000,
-  "sources": [
-    { "layer": "core", "value": 150 },
-    { "layer": "organization", "value": 500 },
-    { "layer": "app", "value": 1000, "winner": true }
-  ]
-}
-```
-
-This turns the docs app into a **live configuration debugger** — developers can see exactly which layer contributes each setting and why the effective value is what it is.
-
 ---
 
 ## Part 9: Future Considerations
 
-### 9.1 OpenFeature Integration
+### 9.1 Feature Flag System
 
-When the project needs runtime feature flags beyond simple config overrides, integrate an [OpenFeature](https://openfeature.dev/)-compatible provider. This gives vendor portability (swap between Flagsmith, Unleash, LaunchDarkly) without code changes.
-
-```typescript
-// core/server/plugins/featureFlags.ts
-import { OpenFeature } from '@openfeature/server-sdk'
-import { FlagsmithProvider } from '@openfeature/flagsmith-provider'
-
-export default defineNitroPlugin(async () => {
-  await OpenFeature.setProviderAndWait(
-    new FlagsmithProvider({ environmentKey: process.env.FLAGSMITH_KEY })
-  )
-})
-```
+Nuxt 4 has no built-in feature flag system. The existing Nuxt module ecosystem for feature flags targets Nuxt 3 only. ADR-006 will define the approach, including building components as toggleable features for A/B testing and production on/off control.
 
 ### 9.2 Multi-Tenancy via Layer Cascade
 
-For SaaS deployments where each tenant needs different configuration:
-1. **Shared infrastructure**: All tenants run on the same Nuxt app instance
-2. **Tenant isolation**: Server middleware extracts tenant ID from JWT/subdomain
-3. **Per-tenant config**: Control plane API returns tenant-specific overrides
-4. **Per-tenant i18n**: Tenants can have custom translations via Tier 4 overrides
-5. **Per-tenant features**: OpenFeature flags with tenant-based targeting
+The layer cascade provides the **build-time foundation** for multi-tenancy: shared build artifacts, layer-based defaults, and build-time tenant variants via `$env` overrides. Runtime multi-tenancy concerns are defined in [ADR-005](./005-runtime-configuration-service.md).
 
-### 9.3 Deployment Node Registry
+### 9.3 `$meta.lock` for Build-Time Config Locking
 
-The control plane maintains a registry of deployed nodes:
-- Each node reports its effective configuration via `/health`
-- The control plane aggregates health across all nodes
-- DevOps can compare configuration between nodes (dev vs staging vs prod)
-- Drift detection: alert when a node's effective config doesn't match expected
-
-### 9.4 AI-Assisted Configuration Management
-
-Since the docs app has MCP integration, and the control plane provides configuration APIs, an AI assistant can:
-1. Read the current effective config for any app via MCP
-2. Understand what each setting does from documentation
-3. Suggest configuration changes based on observed health metrics
-4. Apply changes via the control plane API (with human approval)
-
-Example: "The health endpoint shows memory utilization at 92%. The rate limiter is set to 1000 requests per 5 minutes. I suggest reducing it to 500 to lower memory pressure."
+There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues/34270)) to add a `$meta.lock` convention to Nuxt's configuration system. This would allow lower-priority layers to lock specific config paths so that higher-priority layers cannot override them. This aligns with Nuxt's existing `$meta` convention and would give build-time configuration the same governance capability that [ADR-005](./005-runtime-configuration-service.md) provides at runtime.
 
 ---
 
@@ -959,9 +840,9 @@ Example: "The health endpoint shows memory utilization at 92%. The rate limiter 
 | Nuxt UI locale bridge | `useI18n()` -> `@nuxt/ui/locale` in root layout | Official recommended pattern from Nuxt UI docs |
 | Cross-cutting concerns | Server middleware + Nitro hooks at core layer | Automatic cascade, configurable via `runtimeConfig` |
 | Health check format | `application/health+json` (IETF draft) with extensions | Most semantically rich, AI-parseable, vendor-neutral |
-| Runtime config overrides | 4-tier hierarchy (source, env, flags, control plane) | Covers all deployment scenarios without code changes |
-| Control plane | Separate Nuxt app (`/control`) | Admin UI for DevOps, separate from developer docs |
-| Feature flags | OpenFeature SDK (future) | Vendor-portable, standards-based |
+| Build-time config tiers | 2-tier: source code + startup env vars | Matches Nuxt 4's actual behavior |
+| Runtime configuration | See [ADR-005](./005-runtime-configuration-service.md) | Separated to clarify build-time vs runtime boundary |
+| Feature flags | See ADR-006 | No Nuxt 4 module exists; requires dedicated design |
 
 ---
 
@@ -971,40 +852,25 @@ Example: "The health endpoint shows memory utilization at 92%. The rate limiter 
 - [Nuxt 4 Layers](https://nuxt.com/docs/4.x/getting-started/layers)
 - [Authoring Nuxt Layers](https://nuxt.com/docs/4.x/guide/going-further/layers)
 - [Nuxt Runtime Config](https://nuxt.com/docs/4.x/guide/going-further/runtime-config)
-- [Nuxt Layers Modular Monolith Guide](https://alexop.dev/posts/nuxt-layers-modular-monolith/)
-- [Dave Stewart: Modular Site Architecture with Nuxt Layers](https://davestewart.co.uk/blog/nuxt-layers/)
 
 ### Merge Engine
-- [unjs/defu](https://github.com/unjs/defu) — merge library source code and docs
-- [unjs/c12](https://github.com/unjs/c12) — configuration loader used by Nuxt
-- [Nuxt issue #22194](https://github.com/nuxt/nuxt/issues/22194) — nuxt.config custom merge strategy request
-- [Nuxt issue #15649](https://github.com/nuxt/nuxt/issues/15649) — app.config array deduplication
+- [unjs/defu](https://github.com/unjs/defu)
+- [unjs/c12](https://github.com/unjs/c12)
 
 ### i18n
 - [@nuxtjs/i18n Layers Guide](https://i18n.nuxtjs.org/docs/guide/layers)
 - [@nuxtjs/i18n Lazy Loading](https://i18n.nuxtjs.org/docs/guide/lazy-load-translations)
-- [@nuxtjs/i18n Per-Component Translations](https://i18n.nuxtjs.org/docs/guide/per-component-translations/)
 - [Nuxt UI i18n Integration](https://ui.nuxt.com/docs/getting-started/integrations/i18n/nuxt)
-- [nuxt-modules/i18n issue #1890](https://github.com/nuxt-modules/i18n/issues/1890) — langDir path resolution
-- [nuxt-modules/i18n issue #2978](https://github.com/nuxt-modules/i18n/issues/2978) — cannot override locales from layer
 
 ### Health Checks
 - [IETF draft-inadarei-api-health-check-06](https://datatracker.ietf.org/doc/html/draft-inadarei-api-health-check-06)
-- [inadarei/rfc-healthcheck (GitHub)](https://github.com/inadarei/rfc-healthcheck)
-- [Kubernetes Health Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-- [Spring Boot Actuator Health](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html)
 
-### Control Plane & Multi-Tenancy
-- [AWS SaaS: Control Plane vs Application Plane](https://docs.aws.amazon.com/whitepapers/latest/saas-architecture-fundamentals/control-plane-vs.-application-plane.html)
-- [Azure: Control Planes in Multitenant Solutions](https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/approaches/control-planes)
-- [OpenFeature](https://openfeature.dev/) — vendor-neutral feature flag standard
-
-### Cross-Cutting Concerns
-- [Nuxt Server Middleware](https://nuxt.com/docs/4.x/directory-structure/server)
-- [nuxt-security Rate Limiter](https://nuxt-security.vercel.app/middleware/rate-limiter)
-- [Nitro Hooks](https://nitro.build/guide/plugins#available-hooks)
+### Build-Time Configuration
+- [Nuxt issue #34270](https://github.com/nuxt/nuxt/issues/34270) — `$meta.lock` feature request
 
 ### Related ADRs
 - [ADR-001: Nuxt 4 Application Setup](./001-nuxt4-application-setup.md)
 - [ADR-002: Monorepo Architecture](./002-monorepo-architecture.md)
 - [ADR-003: Developer Experience and Documentation](./003-developer-experience-and-documentation.md)
+- [ADR-005: Runtime Configuration Service](./005-runtime-configuration-service.md)
+- ADR-006: Feature Flag System (planned)
