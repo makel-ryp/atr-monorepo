@@ -1,0 +1,16 @@
+{
+  "name": "@app-agent/organization",
+  "private": true,
+  "type": "module",
+  "description": "Organization layer - YOUR company branding and shared configuration",
+  "scripts": {
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@app-agent/core": "workspace:*"
+  },
+  "devDependencies": {
+    "nuxt": "^4.3.0",
+    "typescript": "^5.9.3"
+  }
+}
