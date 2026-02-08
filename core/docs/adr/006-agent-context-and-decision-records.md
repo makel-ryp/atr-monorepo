@@ -457,107 +457,42 @@ This replaces ad-hoc "did someone update the docs?" reviews with structured, aut
 
 ---
 
-## Agent Instruction Files: Generated, Not Maintained
+## Agent Instruction Files: One File, One Redirect
 
-### The Source of Truth
+### The Convergence
 
-A single template file defines the agent boot prompt content:
+The original design anticipated a zoo of tool-specific instruction files requiring a generation script and template system. That turned out to be unnecessary.
 
-```
-core/docs/agent-prompt.md    ← the canonical boot prompt, tool-agnostic
-```
+As of early 2026, AGENTS.md has become the cross-tool standard ([60,000+ repos](https://agents.md/), Linux Foundation stewardship). Cursor, Codex, Amp, Roo Code, and others read it natively. The only major holdout is Claude Code, which still requires `CLAUDE.md` ([issue #6235](https://github.com/anthropics/claude-code/issues/6235), 2,400+ upvotes).
 
-This contains the universal instructions (architecture summary, explain/record tool usage, `// CONTEXT:` convention, build commands). It's the one file to maintain. Everything else is generated.
+Claude Code supports file imports via `@path` syntax. So the entire "agent instruction" problem reduces to:
 
-### `bun run dev` Agent Setup
+### Two Committed Files
 
-On first run (or when agent config is missing), the dev server asks:
+**`AGENTS.md`** — the source of truth. Contains architecture summary, conventions, build commands, Context Oracle usage. This is the file you maintain.
 
-```
-Which AI coding agent are you using?
+**`CLAUDE.md`** — one line:
 
-  1. Claude Code (CLAUDE.md)
-  2. Cursor (.cursor/rules/)
-  3. GitHub Copilot (.github/copilot-instructions.md)
-  4. Cline (.clinerules/)
-  5. Codex / OpenCode (AGENTS.md only)
-  6. Other / None
-
-Your choice: _
-```
-
-Based on selection, it generates the appropriate file(s) from `agent-prompt.md`:
-
-| Agent | Generated File(s) | Extras |
-|-------|-------------------|--------|
-| Claude Code | `CLAUDE.md` + `AGENTS.md` | `.claude/rules/` left as-is (behavioral, not generated) |
-| Cursor | `.cursor/rules/context-oracle.md` + `AGENTS.md` | Cursor-specific format (rules directory) |
-| GitHub Copilot | `.github/copilot-instructions.md` + `AGENTS.md` | Copilot format |
-| Cline | `.clinerules/context-oracle.md` + `AGENTS.md` | Cline format |
-| Codex / OpenCode | `AGENTS.md` only | Already the native format |
-| Other / None | `AGENTS.md` only | Universal fallback |
-
-**`AGENTS.md` is always generated** — it's the cross-tool fallback. Tool-specific files add any agent-specific instructions (e.g., Claude Code's `.claude/rules/` reference, Cursor's rule scoping syntax).
-
-### What the Generated Files Look Like
-
-All generated files are thin — ~10 lines. They all point to the same MCP tools:
-
-**Claude Code (`CLAUDE.md`):**
 ```markdown
-# CLAUDE.md
-
-Nuxt 4 layered monorepo: core/ → organization/ → apps/*
-The /docs app runs an MCP server with the explain() tool.
-
-Use explain(slug, aspect) for project context on demand.
-Aspects: description | overview | faq | reasoning | details | history | analysis
-
-Don't pre-load documentation. Ask for what you need, when you need it.
-When you encounter // CONTEXT: slug in code, look it up before modifying.
-Use record(slug, aspect, content) to capture knowledge during work sessions.
-
-See .claude/rules/ for behavioral expectations.
+@AGENTS.md
 ```
 
-**Cursor (`.cursor/rules/context-oracle.md`):**
-```markdown
-# Context Oracle
+That's it. Claude Code imports the full AGENTS.md content. Both files are committed to the repo. No generation script, no template file, no agent selection prompt, no `.agent-config.json`.
 
-This project uses an MCP-based context oracle for project knowledge.
-Use explain(slug, aspect) for context on demand.
-Aspects: description | overview | faq | reasoning | details | history | analysis
+### What Got Eliminated
 
-When you encounter // CONTEXT: slug in code, look it up before modifying.
-Use record(slug, aspect, content) to capture knowledge during work sessions.
-```
+| Original Design | Replaced By |
+|-----------------|-------------|
+| `core/docs/agent-prompt.md` template | AGENTS.md directly |
+| `scripts/setup-agent.ts` generator | Not needed |
+| `bun run dev` agent selection prompt | Not needed |
+| `.agent-config.json` (developer's tool choice) | Not needed |
+| Per-tool generated files (.cursorrules, .clinerules, etc.) | AGENTS.md read natively |
+| CLAUDE.md .gitignored + generated | CLAUDE.md committed (one line) |
 
-**AGENTS.md (always present):**
-```markdown
-# AGENTS.md
+### Claude Code-Specific Behavioral Rules
 
-Nuxt 4 layered monorepo: core/ → organization/ → apps/*
-
-## Context
-This project uses an MCP-based context oracle (explain tool) for project knowledge.
-If your tool supports MCP, connect to the /docs app server for on-demand context.
-If not, see core/docs/knowledge/ for slug-based documentation.
-
-Code annotations (// CONTEXT: slug) mark concepts with deeper context available.
-
-## Build & Test
-bun install
-bun run dev
-bun run test
-```
-
-### Why Generate, Not Maintain
-
-- **One source of truth:** `agent-prompt.md` changes, all generated files update on next `bun run dev`
-- **No zoo of files to hand-maintain:** You don't manually sync CLAUDE.md with .cursorrules with copilot-instructions.md
-- **New tools get support instantly:** When a new agent tool appears, add one template mapping and it works
-- **Generated files are .gitignored** (except `AGENTS.md`, which is the universal fallback and stays committed). Each developer generates their own tool-specific file locally.
-- **The developer's choice is saved** in a local config (e.g., `.agent-config.json`, .gitignored) so they're not asked again on every `bun run dev`
+Claude Code's `.claude/rules/` directory is separate from AGENTS.md. These contain Claude Code-specific behavioral instructions (like `critical-thinking.md`) that don't belong in the cross-tool AGENTS.md. They stay hand-maintained and committed.
 
 ---
 
@@ -625,10 +560,9 @@ _(None remaining — all questions from this design session have been resolved.)
 | Slug governance | Exact match at dev time, duplicates caught in code review | Don't interrupt flow with polish — correctness at commit time |
 | Production behavior | Pass-through by default, activatable via runtime settings | Zero cost + on-demand god-mode debugging with AI |
 | DB ownership | Single per repo clone, not per-developer | Shareable context state, simple model, implicit per-dev via clones |
-| Agent instruction source | `core/docs/agent-prompt.md` (single file) | One source of truth, generates all tool-specific files |
-| Agent file generation | `bun run dev` asks which agent, generates appropriate files | No manual zoo maintenance |
-| AGENTS.md | Always generated, committed | Universal cross-tool fallback |
-| Tool-specific files | Generated, .gitignored (except AGENTS.md) | Each dev gets their own tool's file locally |
+| Agent instruction source | `AGENTS.md` (committed) | Cross-tool standard, read natively by Cursor/Codex/Amp/Roo Code |
+| Claude Code support | `CLAUDE.md` containing `@AGENTS.md` (committed) | One-line redirect, no generation needed |
+| Tool-specific files | Not needed | AGENTS.md is the universal standard; only Claude Code needs the redirect |
 | ADR fate | Historical artifacts, no longer primary | Decomposed into slug-based knowledge |
 | Bootstrapping | All at once — walk tool through each ADR | Greenfield project, do it right from the start |
 

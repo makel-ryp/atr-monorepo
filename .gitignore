@@ -42,3 +42,7 @@ packages/*/bun.lock
 .vercel/
 
 demos/chat/.data
+
+# Context Oracle operational databases (rebuildable from source of truth)
+context.db
+logs.db
