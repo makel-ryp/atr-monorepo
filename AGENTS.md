@@ -135,6 +135,7 @@ Read these before making architectural changes (`core/docs/adr/NNN-title.md`):
 | 004 | Layer cascade, i18n, cross-cutting concerns |
 | 005 | Runtime configuration service |
 | 006 | Context oracle (this system — in progress) |
+| 007 | Testing strategy (vitest, @nuxt/test-utils, directory structure) |
 
 ## Rules
 
