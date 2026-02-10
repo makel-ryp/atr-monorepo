@@ -6,20 +6,20 @@ import Database from 'better-sqlite3'
 let db: InstanceType<typeof Database> | null | undefined
 
 export function getLogsDb(): InstanceType<typeof Database> | null {
-  if (db !== undefined) return db
+  // Return cached connection if we have one
+  if (db) return db
 
   try {
-    // docs app cwd is core/docs/, logs.db lives at project root
-    const dbPath = join(process.cwd(), '..', '..', 'logs.db')
+    // Running app cwd is docs/ (one level from root), logs.db lives at project root
+    const dbPath = join(process.cwd(), '..', 'logs.db')
     if (!existsSync(dbPath)) {
-      db = null
+      // Don't cache null — logs.db is created lazily by another process
       return null
     }
     db = new Database(dbPath, { readonly: true })
     return db
   }
   catch {
-    db = null
     return null
   }
 }

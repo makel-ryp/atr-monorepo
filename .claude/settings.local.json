@@ -141,8 +141,25 @@
       "Bash(timeout 15 bun run:*)",
       "Bash(npx nuxi@latest init docs -t ui/docs --package-manager bun --no-install)",
       "Bash(npx nuxi@latest init:*)",
-      "Bash(timeout 20 bun run dev:docs:*)"
+      "Bash(timeout 20 bun run dev:docs:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__fill",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__press_key",
+      "mcp__chrome-devtools__wait_for",
+      "mcp__chrome-devtools__take_screenshot"
     ]
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
+    }
+  }
 }

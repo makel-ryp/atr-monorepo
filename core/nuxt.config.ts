@@ -18,7 +18,8 @@ export default defineNuxtConfig({
   // Shared modules - inherited by all apps
   modules: [
     '@nuxt/ui',
-    '@nuxt/eslint'
+    '@nuxt/eslint',
+    '@nuxt/test-utils/module',
   ],
 
   // Alias for importing from core layer explicitly

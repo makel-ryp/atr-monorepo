@@ -43,6 +43,9 @@ packages/*/bun.lock
 
 demos/chat/.data
 
+# Test coverage
+coverage/
+
 # Context Oracle operational databases (rebuildable from source of truth)
 context.db
 logs.db

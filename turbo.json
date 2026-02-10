@@ -24,6 +24,11 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
+    },
     "clean": {
       "cache": false,
       "outputs": []
