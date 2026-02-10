@@ -3,7 +3,7 @@
 ## Status
 **Proposed**
 
-> **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-tenant overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags have been extracted to [ADR-006](./006-feature-flag-system.md).
+> **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-tenant overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags are tracked as the `feature-flags` knowledge slug (see [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md)).
 
 ## Date
 2026-02-06
@@ -718,7 +718,7 @@ These overrides are resolved at **build time** and become part of the built arti
 | Logging destination | `runtimeConfig` (private) | Server-only, env var overridable |
 | Rate limit thresholds | `runtimeConfig` (private) | Server-only, per-environment |
 | Database connection string | `runtimeConfig` (private) | Provisioning concern |
-| Feature flags | See ADR-006 | Requires runtime evaluation |
+| Feature flags | See `feature-flags` knowledge slug | Requires runtime evaluation |
 | Per-tenant settings | See [ADR-005](./005-runtime-configuration-service.md) | Requires runtime service |
 
 ### What `runtimeConfig` Is NOT For
@@ -818,7 +818,7 @@ The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md))
 
 ### 9.1 Feature Flag System
 
-Nuxt 4 has no built-in feature flag system. The existing Nuxt module ecosystem for feature flags targets Nuxt 3 only. ADR-006 will define the approach, including building components as toggleable features for A/B testing and production on/off control.
+Nuxt 4 has no built-in feature flag system. The existing Nuxt module ecosystem for feature flags targets Nuxt 3 only. The approach is tracked as the `feature-flags` knowledge slug, including building components as toggleable features for A/B testing and production on/off control.
 
 ### 9.2 Multi-Tenancy via Layer Cascade
 
@@ -842,7 +842,7 @@ There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues
 | Health check format | `application/health+json` (IETF draft) with extensions | Most semantically rich, AI-parseable, vendor-neutral |
 | Build-time config tiers | 2-tier: source code + startup env vars | Matches Nuxt 4's actual behavior |
 | Runtime configuration | See [ADR-005](./005-runtime-configuration-service.md) | Separated to clarify build-time vs runtime boundary |
-| Feature flags | See ADR-006 | No Nuxt 4 module exists; requires dedicated design |
+| Feature flags | See `feature-flags` knowledge slug | No Nuxt 4 module exists; requires dedicated design |
 
 ---
 
@@ -873,4 +873,4 @@ There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues
 - [ADR-002: Monorepo Architecture](./002-monorepo-architecture.md)
 - [ADR-003: Developer Experience and Documentation](./003-developer-experience-and-documentation.md)
 - [ADR-005: Runtime Configuration Service](./005-runtime-configuration-service.md)
-- ADR-006: Feature Flag System (planned)
+- [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md) (feature flags tracked as knowledge slug)

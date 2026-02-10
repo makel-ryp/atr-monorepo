@@ -104,6 +104,17 @@ export default defineContextHandler('rate-limiting', async (ctx, event) => {
 Variants: `defineContextHandler`, `defineContextComposable`, `defineContextPlugin`.
 Production behavior: pass-through (single boolean check, zero overhead).
 
+### i18n Namespace Convention
+
+Translation keys are namespaced by layer to prevent collisions:
+
+- `core.*` — shared strings (actions, errors, status) in `core/i18n/locales/`
+- `org.*` — brand/company strings in `organization/i18n/locales/`
+- `app.*` — app-specific strings in `apps/*/i18n/locales/`
+
+Usage: `$t('core.actions.save')`, `$t('org.name')`, `$t('app.dashboard.title')`.
+Config: `@nuxtjs/i18n` installed at core, `langDir` must use absolute paths in layers.
+
 ### Layer Override Rules
 
 - Components/pages: higher layer completely replaces lower layer
