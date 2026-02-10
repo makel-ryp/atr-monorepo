@@ -12,9 +12,11 @@ WHEN TO USE: Use this to capture knowledge during work sessions:
 INPUT:
 - slug: Feature identifier in kebab-case (e.g., "layer-cascade")
 - aspect: What kind of knowledge to write (description, overview, faq, reasoning, details, history)
-- content: The full markdown content to write
+- content: The markdown content to write
 
-The content REPLACES the existing aspect file entirely. If you need to merge with existing content, use the explain tool first to read the current content.
+The content REPLACES the existing aspect section entirely. If you need to merge with existing content, use the explain tool first to read the current content.
+
+Each slug is a single markdown file with frontmatter (title, description) and H2 sections for other aspects.
 
 SPECIAL: Use aspect "stale" to mark a slug's knowledge as potentially outdated without modifying any files.`,
   inputSchema: {
@@ -22,7 +24,7 @@ SPECIAL: Use aspect "stale" to mark a slug's knowledge as potentially outdated w
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be kebab-case (lowercase letters, numbers, hyphens)')
       .describe('Feature slug in kebab-case (e.g., "layer-cascade", "runtime-config")'),
     aspect: z.string().describe('Aspect to write: description, overview, faq, reasoning, details, history, or "stale" to mark as outdated'),
-    content: z.string().describe('Full markdown content for the aspect file (replaces existing content)'),
+    content: z.string().describe('Markdown content for the aspect (replaces existing section)'),
   },
   handler: async ({ slug, aspect, content }) => {
     if (aspect === 'stale') {
@@ -55,7 +57,7 @@ SPECIAL: Use aspect "stale" to mark a slug's knowledge as potentially outdated w
     }
     catch (error) {
       return {
-        content: [{ type: 'text', text: `Failed to write ${slug}/${aspect}.md: ${error}` }],
+        content: [{ type: 'text', text: `Failed to write ${slug}/${aspect}: ${error}` }],
         isError: true,
       }
     }
@@ -64,7 +66,7 @@ SPECIAL: Use aspect "stale" to mark a slug's knowledge as potentially outdated w
 
     const label = isNewSlug ? '(new slug)' : changeType === 'created' ? '(new aspect)' : '(updated)'
     return {
-      content: [{ type: 'text', text: `${changeType === 'created' ? 'Created' : 'Updated'} ${slug}/${aspect}.md ${label}` }],
+      content: [{ type: 'text', text: `${changeType === 'created' ? 'Created' : 'Updated'} ${slug}:${aspect} ${label}` }],
     }
   },
 })

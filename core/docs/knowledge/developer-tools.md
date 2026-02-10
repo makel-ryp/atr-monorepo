@@ -1,4 +1,22 @@
-# Developer Tools - Embedded AI Assistant Infrastructure
+---
+title: Developer Tools
+description: Embedded AI assistant infrastructure for introspection, multi-model consultation, and personal knowledge base.
+---
+
+## Overview
+
+Embedded infrastructure giving AI assistants deep access to introspection, multi-model consultation, and a personal knowledge base with vector embeddings.
+
+Key capabilities:
+
+- Live logs, config, health, features, database inspection
+- Multi-LLM council for architectural decisions
+- RAG over preferences, decisions, and notes
+- JMESPath filtering on all results
+
+Disabled in production by default.
+
+## Details
 
 > **Status**: Implemented
 > **Created**: 2026-01-27
@@ -7,7 +25,7 @@
 
 ---
 
-## Overview
+### Overview
 
 The `dev` MCP tool provides embedded infrastructure that gives the AI assistant (Claude) deep access to:
 
@@ -20,9 +38,9 @@ This is **not** an external service. It lives in the codebase, has full access t
 
 ---
 
-## Quick Reference
+### Quick Reference
 
-### Actions
+#### Actions
 
 | Action | Description | Example |
 |--------|-------------|---------|
@@ -41,7 +59,7 @@ This is **not** an external service. It lives in the codebase, has full access t
 | `collections` | List memory collections | `dev({ action: 'collections' })` |
 | `restart` | Trigger server restart | `dev({ action: 'restart' })` |
 
-### JMESPath Filtering
+#### JMESPath Filtering
 
 All actions support the `jmespath` option to filter/transform results:
 
@@ -58,9 +76,9 @@ dev({ action: 'logs', options: { jmespath: 'logs[?contains(@, `ERROR`)]' } })
 
 ---
 
-## Introspection Actions
+### Introspection Actions
 
-### status - Quick Overview
+#### status - Quick Overview
 
 Returns a compact summary of system state in a single call.
 
@@ -79,7 +97,7 @@ dev({ action: 'status' })
 }
 ```
 
-### logs - Server Logs
+#### logs - Server Logs
 
 Tail and search the in-memory log buffer.
 
@@ -100,12 +118,13 @@ dev({ action: 'logs', options: { clear: true } })
 ```
 
 **Log Buffer Details:**
+
 - Max size: 500 entries (oldest removed when full)
 - Message length limit: 500 chars (truncated)
 - Captures: api, auth, tool, mcp, error, startup, shutdown events
 - Filters out: verbose settings dumps, large JSON objects
 
-### config - Runtime Configuration
+#### config - Runtime Configuration
 
 Access current configuration with optional secret redaction.
 
@@ -123,7 +142,7 @@ dev({ action: 'config', options: { path: 'ui.branding' } })
 dev({ action: 'config' })
 ```
 
-### health - Service Health
+#### health - Service Health
 
 Comprehensive health check of all services.
 
@@ -150,7 +169,7 @@ dev({ action: 'health' })
 }
 ```
 
-### features - Feature Registry
+#### features - Feature Registry
 
 View all feature flags and their current state.
 
@@ -173,7 +192,7 @@ dev({ action: 'features' })
 }
 ```
 
-### db - Database State
+#### db - Database State
 
 Query database state and run read-only SQL.
 
@@ -194,9 +213,9 @@ dev({ action: 'db', options: { table: 'settings_blob' } })
 dev({ action: 'db', options: { query: 'SELECT COUNT(*) FROM transactions' } })
 ```
 
-**Known Tables:** settings_blob, settings_audit, transactions, llm_calls, settings_users, knowledge_embeddings
+**Known Tables:** settings\_blob, settings\_audit, transactions, llm\_calls, settings\_users, knowledge\_embeddings
 
-### connections - Active Connections
+#### connections - Active Connections
 
 View MCP sessions and database connection status.
 
@@ -224,9 +243,9 @@ dev({ action: 'connections' })
 
 ---
 
-## Consultation Actions
+### Consultation Actions
 
-### consult - Multi-Model LLM Council
+#### consult - Multi-Model LLM Council
 
 Query multiple LLMs and synthesize their responses (Karpathy-style).
 
@@ -249,7 +268,7 @@ dev({
 })
 ```
 
-### Consultation Modes
+#### Consultation Modes
 
 | Mode | Models | Use Case |
 |------|--------|----------|
@@ -257,9 +276,10 @@ dev({
 | `standard` | 3 models + chairman | Architectural decisions |
 | `full` | 5 models + peer review + chairman | Critical decisions |
 
-### Default Council Models
+#### Default Council Models
 
 Configured in feature flag `dev-tools`:
+
 - `openai/gpt-4o-mini`
 - `google/gemini-2.0-flash-thinking-exp:free`
 - `meta-llama/llama-3.3-70b-instruct`
@@ -268,9 +288,9 @@ Chairman: `openai/gpt-4o-mini`
 
 ---
 
-## Memory Actions
+### Memory Actions
 
-### recall - RAG Search
+#### recall - RAG Search
 
 Search the knowledge base using vector similarity.
 
@@ -289,7 +309,7 @@ dev({
 })
 ```
 
-### remember - Store Knowledge
+#### remember - Store Knowledge
 
 Store information to the knowledge base with embeddings.
 
@@ -316,7 +336,7 @@ dev({
 })
 ```
 
-### collections - List Collections
+#### collections - List Collections
 
 View what's stored in the knowledge base without searching.
 
@@ -338,7 +358,7 @@ dev({ action: 'collections' })
 }
 ```
 
-### preferences - Coding Preferences
+#### preferences - Coding Preferences
 
 Shorthand for preference-related operations.
 
@@ -347,7 +367,7 @@ Shorthand for preference-related operations.
 dev({ action: 'preferences', query: 'code style' })
 ```
 
-### decisions - Decision Journal
+#### decisions - Decision Journal
 
 Shorthand for decision-related operations.
 
@@ -358,9 +378,9 @@ dev({ action: 'decisions', query: 'database choice' })
 
 ---
 
-## Server Control
+### Server Control
 
-### restart - Safe Restart
+#### restart - Safe Restart
 
 Trigger a server restart via file watcher (no process killing).
 
@@ -377,7 +397,7 @@ dev({ action: 'restart' })
 
 ---
 
-## File Structure
+### File Structure
 
 ```
 tools/dev/
@@ -406,9 +426,9 @@ tools/dev/
 
 ---
 
-## Configuration
+### Configuration
 
-### Feature Flag
+#### Feature Flag
 
 Located in `config/features/index.json` under `dev-tools`:
 
@@ -437,7 +457,7 @@ Located in `config/features/index.json` under `dev-tools`:
 }
 ```
 
-### Environment Variables
+#### Environment Variables
 
 ```bash
 # Enable in production (use with caution)
@@ -449,7 +469,7 @@ OPENROUTER_API_KEY=sk-or-...
 
 ---
 
-## Database Schema
+### Database Schema
 
 ```sql
 -- Vector store for RAG
@@ -471,6 +491,7 @@ CREATE INDEX ON knowledge_embeddings
 ```
 
 Collections:
+
 - `sessions` - Auto-saved conversation summaries
 - `decisions` - Explicit architectural decisions
 - `preferences` - Personal coding style patterns
@@ -480,15 +501,16 @@ Collections:
 
 ---
 
-## Security Considerations
+### Security Considerations
 
-### Production Safety
+#### Production Safety
 
 Dev tools are **disabled in production** by default. To enable:
+
 1. Set `DEV_TOOLS_FORCE_ENABLE=true` in environment
 2. Or set `forceEnable: true` in feature config
 
-### Access Control by Action
+#### Access Control by Action
 
 | Action | Dev | Staging | Production |
 |--------|-----|---------|------------|
@@ -504,7 +526,7 @@ Dev tools are **disabled in production** by default. To enable:
 | collections | Yes | Yes | Yes |
 | restart | Yes | No | No |
 
-### Secret Handling
+#### Secret Handling
 
 - Secrets redacted by default in config output
 - Explicit `allowSecretAccess` required in config
@@ -512,15 +534,15 @@ Dev tools are **disabled in production** by default. To enable:
 
 ---
 
-## Usage Examples
+### Usage Examples
 
-### Quick health check
+#### Quick health check
 
 ```typescript
 dev({ action: 'status' })
 ```
 
-### Debug a failing request
+#### Debug a failing request
 
 ```typescript
 // Check recent error logs
@@ -530,7 +552,7 @@ dev({ action: 'logs', query: 'error', options: { since: '5m', level: 'error' } }
 dev({ action: 'health', options: { jmespath: 'services' } })
 ```
 
-### Architectural decision
+#### Architectural decision
 
 ```typescript
 dev({
@@ -540,7 +562,7 @@ dev({
 })
 ```
 
-### Remember a preference
+#### Remember a preference
 
 ```typescript
 dev({
@@ -550,7 +572,7 @@ dev({
 })
 ```
 
-### Recall past decisions
+#### Recall past decisions
 
 ```typescript
 dev({
@@ -560,7 +582,7 @@ dev({
 })
 ```
 
-### Clear log buffer
+#### Clear log buffer
 
 ```typescript
 dev({ action: 'logs', options: { clear: true } })
@@ -568,7 +590,7 @@ dev({ action: 'logs', options: { clear: true } })
 
 ---
 
-## Prior Art & Inspiration
+### Prior Art & Inspiration
 
 | Project | What we take from it |
 |---------|---------------------|
@@ -579,19 +601,23 @@ dev({ action: 'logs', options: { clear: true } })
 
 ---
 
-## Future Enhancements
+### Future Enhancements
 
-### Phase 4: Runtime Inspection
+#### Phase 4: Runtime Inspection
+
 - Observable registry for live value inspection
 - Node.js inspector integration (dev only)
 - Expression evaluation with safety checks
 
-### Phase 5: Browser Bridge
+#### Phase 5: Browser Bridge
+
 - WebSocket server for browser communication
 - DOM query access
 - React/Vue state inspection
 
-### Phase 6: External Integrations
+#### Phase 6: External Integrations
+
 - MS Graph OAuth (Teams + Outlook)
 - Meeting transcript processing
 - Calendar integration
+

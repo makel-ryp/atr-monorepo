@@ -10,17 +10,17 @@ WHEN TO USE: Use this to understand a concept, feature, or architectural decisio
 
 INPUT:
 - slug: The feature identifier (e.g., "layer-cascade", "rate-limiting")
-- aspect: What kind of information you want (default: "description")
+- aspect: What kind of information you want (optional — omit to get the full knowledge file)
 
-ASPECTS: description (one-liner), overview (5-15 line summary), faq (common questions), reasoning (why this decision), details (full deep-dive), history (how it evolved)
+ASPECTS: description (one-liner from frontmatter), overview (5-15 line summary), faq (common questions), reasoning (why this decision), details (full deep-dive), history (how it evolved)
 
-If you don't know what slugs exist, call with any slug and the error will list available ones.`,
+If you don't know what slugs exist, call with any slug and the error will list available ones.
+Omit aspect to get the entire knowledge file at once (recommended for full context).`,
   inputSchema: {
     slug: z.string().describe('Feature slug (e.g., "layer-cascade", "runtime-config")'),
-    aspect: z.string().optional().describe('Aspect to retrieve: description, overview, faq, reasoning, details, history. Defaults to "description".'),
+    aspect: z.string().optional().describe('Aspect to retrieve: description, overview, faq, reasoning, details, history. Omit for full file.'),
   },
-  handler: async ({ slug, aspect: rawAspect }) => {
-    const aspect = rawAspect || 'description'
+  handler: async ({ slug, aspect }) => {
     if (aspect === 'analysis') {
       return {
         content: [{ type: 'text', text: 'The "analysis" aspect is not yet implemented. It will use MCP sampling to generate on-demand analysis.' }],
@@ -28,7 +28,7 @@ If you don't know what slugs exist, call with any slug and the error will list a
       }
     }
 
-    if (!VALID_ASPECTS.includes(aspect as any)) {
+    if (aspect && !VALID_ASPECTS.includes(aspect as any)) {
       return {
         content: [{ type: 'text', text: `Invalid aspect "${aspect}". Valid aspects: ${VALID_ASPECTS.join(', ')}` }],
         isError: true,
@@ -47,12 +47,28 @@ If you don't know what slugs exist, call with any slug and the error will list a
       }
     }
 
-    const content = await readAspect(slug, aspect)
-    if (content === null) {
+    // No aspect specified — return the full file
+    if (!aspect) {
+      const fullContent = await readKnowledgeFile(slug)
+      if (!fullContent) {
+        return {
+          content: [{ type: 'text', text: `Slug "${slug}" exists but could not be read.` }],
+          isError: true,
+        }
+      }
+      logQuery(slug, 'full')
+      return {
+        content: [{ type: 'text', text: fullContent }],
+      }
+    }
+
+    // Specific aspect requested
+    const result = await readAspect(slug, aspect)
+    if (result === null) {
       const available = await listAspects(slug)
       const aspectList = available.length > 0
         ? `Available aspects for "${slug}": ${available.join(', ')}`
-        : `Slug "${slug}" exists but has no aspect files yet.`
+        : `Slug "${slug}" exists but has no aspects yet.`
       return {
         content: [{ type: 'text', text: `Aspect "${aspect}" not found for slug "${slug}". ${aspectList}` }],
         isError: true,
@@ -62,7 +78,7 @@ If you don't know what slugs exist, call with any slug and the error will list a
     logQuery(slug, aspect)
 
     return {
-      content: [{ type: 'text', text: content }],
+      content: [{ type: 'text', text: result }],
     }
   },
 })
