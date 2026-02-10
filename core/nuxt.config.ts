@@ -26,9 +26,12 @@ export default defineNuxtConfig({
   // CONTEXT: i18n-layers — Core i18n config; layers inherit and add their own locale files
   i18n: {
     lazy: true,
-    langDir: resolve(currentDir, 'i18n/locales'),
+    langDir: '../i18n/locales',
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
+    bundle: {
+      optimizeTranslationDirective: false,
+    },
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_locale',
@@ -47,6 +50,8 @@ export default defineNuxtConfig({
   },
 
   // Base runtime configuration - apps can override
+  // NOTE: Core datasource (CORE_DATASOURCE_*) is NOT in runtimeConfig.
+  // It's read via process.env in server code only — see config-service/provider.ts
   runtimeConfig: {
     // Private keys (server-side only)
     apiSecret: '',

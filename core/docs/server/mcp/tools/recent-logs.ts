@@ -25,7 +25,7 @@ NOTE: logs.db only has entries when the dev server runs with import.meta.dev = t
     const logs = queryRecentLogs({ slug, level, since, limit })
 
     if (logs.length === 0) {
-      const conn = getLogsDb()
+      const conn = getLogsQueryDb()
       const hint = conn === null
         ? 'logs.db not found. Is the dev server running?'
         : 'No matching logs. Try broadening your filters or check that context-wrapped code has executed.'

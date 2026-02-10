@@ -122,6 +122,31 @@ Config: `@nuxtjs/i18n` installed at core, `langDir` must use absolute paths in l
 - Arrays (modules, css, plugins): concatenated across all layers
 - Server middleware: ALL layers run (additive)
 
+## Runtime Config Service (ADR-005)
+
+Hot-reloadable settings with `$meta.lock` governance. Provider-agnostic (PostgreSQL-compatible datasource).
+
+- **Provider abstraction:** `core/server/utils/config-service/` — `ConfigProvider` interface
+- **Providers:** `supabase` (implemented), `pg`, `neon`, `sqlite` (planned)
+- **Extensible layer model:** `core → core:org → core:app → [...app-defined] → user`
+  - Core layers (`core`, `core:org`) are always first with `app_id='*'`
+  - App defines custom chain via `$meta.layers` in its `core:app` row
+  - `user` is always last, keyed as `{appId}/{userId}`
+  - Environment is a FILTER (exact match or `*`), not a merge position
+- **`$meta.lock`:** paths locked by higher-priority layers cannot be overridden
+- **API:** All routes require `appId` and `environment` params
+  - `GET /api/settings?appId=...&environment=...&userId=...` — effective merged config
+  - `PUT /api/settings/:key` — body: `{ value, appId, environment, layerName, layerKey }`
+  - `DELETE /api/settings/:key?appId=...&environment=...&layerName=...&layerKey=...`
+  - `GET /api/settings/audit?appId=...&environment=...&layerName=...&layerKey=...`
+  - `GET /api/settings/stats`
+- **DB setup:** Run `scripts/db-setup.sql` in your datasource's SQL editor
+- **Core datasource env (NOT in runtimeConfig — read via process.env):**
+  - `CORE_DATASOURCE_URL` — connection endpoint
+  - `CORE_DATASOURCE_KEY` — service/admin API key
+  - `CORE_DATASOURCE_PROVIDER` — which provider to load (default: `supabase`)
+  - `CORE_ENVIRONMENT` — environment identifier (falls back to `NODE_ENV`)
+
 ## Context Oracle (MCP) — In Progress
 
 The `/docs` app will expose MCP tools for on-demand project knowledge:
@@ -155,3 +180,4 @@ Read these before making architectural changes (`core/docs/adr/NNN-title.md`):
 - When multiple valid approaches exist, present trade-offs rather than picking the first option.
 - Push back on technical debt, coupling, or scope creep with a concrete alternative.
 - "I disagree because..." is always acceptable. Agreeing when you shouldn't is not.
+- Use precise constraint language ("immutable", "critical", "required by design"), not authority language ("sacrosanct", "unquestionable", "absolute"). Every assumption should feel challengeable.

@@ -20,6 +20,20 @@ vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
 })))
 vi.stubGlobal('setResponseStatus', vi.fn())
 vi.stubGlobal('setResponseHeader', vi.fn())
+vi.stubGlobal('getRouterParam', vi.fn())
 
 // Stub writeLog (auto-imported from server/utils/logs-db.ts)
 vi.stubGlobal('writeLog', vi.fn())
+
+// Stub config-service auto-imports
+vi.stubGlobal('getConfigStore', vi.fn(() => null))
+vi.stubGlobal('initConfigStore', vi.fn())
+vi.stubGlobal('createConfigProvider', vi.fn(() => null))
+vi.stubGlobal('getNestedValue', (await import('../server/utils/config-service/paths')).getNestedValue)
+vi.stubGlobal('setNestedValue', (await import('../server/utils/config-service/paths')).setNestedValue)
+vi.stubGlobal('deleteNestedValue', (await import('../server/utils/config-service/paths')).deleteNestedValue)
+vi.stubGlobal('flattenConfig', (await import('../server/utils/config-service/paths')).flattenConfig)
+vi.stubGlobal('unflattenConfig', (await import('../server/utils/config-service/paths')).unflattenConfig)
+vi.stubGlobal('configDeepMerge', (await import('../server/utils/config-service/merge')).configDeepMerge)
+vi.stubGlobal('mergeWithGovernance', (await import('../server/utils/config-service/merge')).mergeWithGovernance)
+vi.stubGlobal('computeConfigDiff', (await import('../server/utils/config-service/merge')).computeConfigDiff)

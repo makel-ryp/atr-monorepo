@@ -86,7 +86,7 @@ Three tiers. Platform → Organization → User. Merged in that order. Higher ti
 |------------|-------------|-----------|
 | **Group layers** (sub-orgs, roles, domain groups) | Future ADR: "Group Service" | Requires group membership model, reverse index for cache invalidation |
 | **Contextual layers** (time of day, geolocation, device type) | Future ADR: "Context Service" | Per-request variability breaks simple caching; needs its own evaluation engine |
-| **Feature flags** (A/B testing, rollouts, kill switches) | [ADR-006](./006-feature-flag-system.md) | Nuxt 4 has no feature flag system (only Nuxt 3 modules exist). Components will be built as toggleable features. Deserves its own ADR. |
+| **Feature flags** (A/B testing, rollouts, kill switches) | [ADR-006](./006-agent-context-and-decision-records.md) | Nuxt 4 has no feature flag system (only Nuxt 3 modules exist). Components will be built as toggleable features. Deserves its own ADR. |
 | **Reverse index** (layer → affected users mapping) | Ships with Group Service | Only needed when shared group layers exist; org-level changes use broadcast |
 | **SchemaPack binary diffs** | Future ADR: "Wire Optimization" | Optimization for high-frequency changes; JSON is sufficient for v1 |
 
@@ -417,7 +417,7 @@ Nuxt 4 has no feature flag system. ADR-006 will define the approach, including b
 | Server hot-reload | Nitro plugin + direct mutation | `useRuntimeConfig()` returns a mutable object |
 | Client hot-reload | Settings API + WebSocket | `runtimeConfig.public` is already reactive |
 | Audit trail | `config_history` table | SOC2/SOX compliance, rollback support |
-| Feature flags | Deferred to [ADR-006](./006-feature-flag-system.md) | No Nuxt 4 support exists |
+| Feature flags | Deferred to [ADR-006](./006-agent-context-and-decision-records.md) | No Nuxt 4 support exists |
 
 ---
 
@@ -440,4 +440,4 @@ Nuxt 4 has no feature flag system. ADR-006 will define the approach, including b
 
 ### Related ADRs
 - [ADR-004: Layer Cascade, i18n, and Cross-Cutting Concerns](./004-layer-cascade-i18n-and-cross-cutting-concerns.md) — build-time configuration
-- ADR-006: Feature Flag System (planned) — feature flags and A/B testing
+- [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md) (feature flags tracked as knowledge slug)

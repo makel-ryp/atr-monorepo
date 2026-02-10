@@ -21,7 +21,7 @@ OUTPUT: Total log count, breakdown by slug (with last-seen timestamps), breakdow
     const summary = getLogSummary(since)
 
     if (summary.total === 0) {
-      const conn = getLogsDb()
+      const conn = getLogsQueryDb()
       const hint = conn === null
         ? 'logs.db not found. Is the dev server running?'
         : 'No logs recorded yet. Context-wrapped code needs to execute in dev mode first.'

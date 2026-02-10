@@ -7,8 +7,9 @@
       "env": [
         "NUXT_PUBLIC_API_BASE",
         "NUXT_API_SECRET",
-        "SUPABASE_URL",
-        "SUPABASE_KEY"
+        "CORE_DATASOURCE_URL",
+        "CORE_DATASOURCE_KEY",
+        "CORE_DATASOURCE_PROVIDER"
       ]
     },
     "dev": {

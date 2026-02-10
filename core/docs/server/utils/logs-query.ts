@@ -5,7 +5,7 @@ import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
 
-export function getLogsDb(): InstanceType<typeof Database> | null {
+export function getLogsQueryDb(): InstanceType<typeof Database> | null {
   // Return cached connection if we have one
   if (db) return db
 
@@ -41,7 +41,7 @@ export function queryRecentLogs(options: {
   since?: string
   limit?: number
 }): LogEntry[] {
-  const conn = getLogsDb()
+  const conn = getLogsQueryDb()
   if (!conn) return []
 
   const conditions: string[] = []
@@ -86,7 +86,7 @@ export interface LogSummary {
 }
 
 export function getLogSummary(since?: string): LogSummary {
-  const conn = getLogsDb()
+  const conn = getLogsQueryDb()
   if (!conn) return { total: 0, bySlug: [], byLevel: [], recentErrors: [] }
 
   const timeFilter = since

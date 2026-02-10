@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
+let insertStmt: ReturnType<InstanceType<typeof Database>['prepare']> | null = null
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS logs (
@@ -62,9 +63,10 @@ export function writeLog(
     const conn = getLogsDb()
     if (!conn) return
 
-    conn.prepare(`
-      INSERT INTO logs (slug, level, message, data) VALUES (?, ?, ?, ?)
-    `).run(slug, level, message, data ?? null)
+    if (!insertStmt) {
+      insertStmt = conn.prepare('INSERT INTO logs (slug, level, message, data) VALUES (?, ?, ?, ?)')
+    }
+    insertStmt.run(slug, level, message, data ?? null)
   }
   catch {
     // Silent — logs.db is optional
