@@ -218,9 +218,9 @@ export default [
 | Code Under Test | Environment | Directory | Why |
 |-----------------|-------------|-----------|-----|
 | `logs-db.ts` (schema, writeLog) | `node` | `tests/unit/` | Pure SQLite, no Nuxt |
-| `context.ts` (createContextScope) | `node` | `tests/server/` | Uses Nitro globals (stubbed) |
-| `defineContextHandler` | `node` | `tests/server/` | Wraps defineEventHandler (stubbed) |
-| `defineContextComposable.ts` | `node` | `tests/unit/` | Pure function, no Nuxt deps |
+| `feature.ts` (createFeatureScope) | `node` | `tests/server/` | Uses Nitro globals (stubbed) |
+| `defineFeatureHandler` | `node` | `tests/server/` | Wraps defineEventHandler (stubbed) |
+| `defineFeatureComposable.ts` | `node` | `tests/unit/` | Pure function, no Nuxt deps |
 | Vue components | `nuxt` | `tests/nuxt/` | Need auto-imports, mount |
 | Composables using `useNuxtApp()` | `nuxt` | `tests/nuxt/` | Need Nuxt runtime |
 | Composables that are pure functions | `node` | `tests/unit/` | No Nuxt deps |

@@ -1,7 +1,7 @@
 # ADR-008: Naming — "Context" vs "Feature" as the System's Core Noun
 
 ## Status
-**Proposed**
+**Accepted**
 
 ## Date
 2026-02-11

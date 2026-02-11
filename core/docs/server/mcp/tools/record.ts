@@ -30,7 +30,7 @@ SPECIAL: Use aspect "stale" to mark a slug's knowledge as potentially outdated w
     if (aspect === 'stale') {
       logChange(slug, 'stale', 'stale')
       return {
-        content: [{ type: 'text', text: `Marked "${slug}" as stale in context.db.` }],
+        content: [{ type: 'text', text: `Marked "${slug}" as stale in knowledge.db.` }],
       }
     }
 

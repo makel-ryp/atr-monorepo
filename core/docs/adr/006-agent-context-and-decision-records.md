@@ -213,7 +213,7 @@ from a request handler causes race conditions under load. Slug: runtime-config,
 aspect: faq. User's exact words were 'this sucks'. File was server/middleware/foo.ts."
 
 Sub-agent: *reads existing faq.md, appends the new gotcha with timestamp and
-user quote, updates context.db with the change metadata, done*
+user quote, updates knowledge.db with the change metadata, done*
 
 Main agent: *never left the coding task*
 ```
@@ -223,7 +223,7 @@ The sub-agent:
 - Preserves the user's raw voice in `history` entries (no sanitizing)
 - Includes timestamps, relevant file paths, and code context
 - Creates the slug directory if it doesn't exist yet (new knowledge = new slug)
-- Updates `context.db` with operational metadata (what changed, when, triggered by what)
+- Updates `knowledge.db` with operational metadata (what changed, when, triggered by what)
 - Uses exact slug matching (no fuzzy matching — correctness is a code review concern, not a development-time concern. Don't punish developers in the trenches for unshined boots.)
 - Returns immediately — the main agent never waited
 
@@ -280,7 +280,7 @@ Both files live at project root and are `.gitignored`.
 - Survives HMR and server restarts
 - Queryable: "last 10 logs for `rate-limiting`" returns only rate-limiting output
 - Represents the current work, not historical archive — encourages regular cleanup and retros
-- Shareable: dropping someone else's `context.db` into your repo gives you their exact context state (knowledge transfer for debugging, pair programming, onboarding)
+- Shareable: dropping someone else's `knowledge.db` into your repo gives you their exact knowledge state (knowledge transfer for debugging, pair programming, onboarding)
 
 ### The Bootstrap Protocol: Staleness = Delete and Rebuild
 
@@ -355,7 +355,7 @@ When Claude Code (or any client) eventually ships sampling support, the emulatio
 explain("rate-limiting", "analysis") →
 
 Sub-agent (via sampling or emulation):
-  1. Reads context.db for all files/lines tagged rate-limiting
+  1. Reads knowledge.db for all files/lines tagged rate-limiting
   2. Reads those actual source files
   3. Reads the existing knowledge aspects (overview, faq, details)
   4. Compares what the knowledge says vs what the code actually does
@@ -434,7 +434,7 @@ The context system enables automated code review and health checks:
 
 ### Slug-Based Review
 
-When a PR touches files annotated with `// CONTEXT: slug`, the review process can:
+When a PR touches files annotated with `// SEE: feature "slug"`, the review process can:
 1. Identify all slugs touched by the changeset
 2. Call `explain(slug, "faq")` for each — surface known gotchas relevant to the change
 3. Call `explain(slug, "reasoning")` — ensure the change doesn't violate the original intent
@@ -442,7 +442,7 @@ When a PR touches files annotated with `// CONTEXT: slug`, the review process ca
 
 ### Codebase Health Scan
 
-A full health check scans every `// CONTEXT:` comment and `context()` registration:
+A full health check scans every `// SEE:` comment and `defineFeature*()` registration:
 
 ```
 bun run context:health
@@ -470,7 +470,7 @@ Claude Code supports file imports via `@path` syntax. So the entire "agent instr
 
 ### Two Committed Files
 
-**`AGENTS.md`** — the source of truth. Contains architecture summary, conventions, build commands, Context Oracle usage. This is the file you maintain.
+**`AGENTS.md`** — the source of truth. Contains architecture summary, conventions, build commands, feature knowledge usage. This is the file you maintain.
 
 **`CLAUDE.md`** — one line:
 
@@ -531,11 +531,11 @@ This is knowledge mining. The format is the process.
 
 ## Resolved Questions (This Session)
 
-4. **Slug naming governance.** Exact matching only. No fuzzy matching at development time. Slug duplication and naming inconsistencies (e.g., `rate-limiting` vs `rate-limiter`) are caught during code review, not while the developer is working. The code review process scans all `// CONTEXT:` annotations and flags duplicates/near-misses. Don't interrupt flow with polish concerns.
+4. **Slug naming governance.** Exact matching only. No fuzzy matching at development time. Slug duplication and naming inconsistencies (e.g., `rate-limiting` vs `rate-limiter`) are caught during code review, not while the developer is working. The code review process scans all `// SEE:` annotations and flags duplicates/near-misses. Don't interrupt flow with polish concerns.
 
-5. **`context()` wrapper in production.** Pass-through by default — single boolean check, then straight to the wrapped function. Zero overhead. Context collection can be re-enabled via runtime settings feature flag (ADR-005 control plane) for live debugging with AI assistance. Never wrap inside tight loops (code review flag). The wrapper goes at major functionality boundaries: handlers, plugins, composables.
+5. **`defineFeature*()` wrapper in production.** Pass-through by default — single boolean check, then straight to the wrapped function. Zero overhead. Feature instrumentation can be re-enabled via runtime settings feature flag (ADR-005 control plane) for live debugging with AI assistance. Never wrap inside tight loops (code review flag). The wrapper goes at major functionality boundaries: handlers, plugins, composables.
 
-6. **DB ownership model.** Single `/context.db` and `/logs.db` per repo clone, not per-developer. Each developer already has their own via their own clone. The DB represents the current work session, not a personal archive. Shareable: drop in a teammate's `context.db` to inherit their context state. CI gets a fresh rebuild each run.
+6. **DB ownership model.** Single `/knowledge.db` and `/logs.db` per repo clone, not per-developer. Each developer already has their own via their own clone. The DB represents the current work session, not a personal archive. Shareable: drop in a teammate's `knowledge.db` to inherit their context state. CI gets a fresh rebuild each run.
 
 ## Open Questions
 
@@ -550,17 +550,17 @@ _(None remaining — all questions from this design session have been resolved.)
 | Primary knowledge access | `explain(slug, aspect)` MCP tool | Pull > push. On-demand > pre-loaded. |
 | Knowledge write-back | `record(slug, aspect, content)` MCP tool | Capture knowledge in flow, secretary sub-agent writes |
 | Knowledge identifier | Descriptive slugs (e.g., `layer-cascade`) | Self-describing, no lookup table, works everywhere |
-| Code annotations | `// CONTEXT: slug` comments | "Context" is universal, primes AI to look deeper |
-| Runtime wrapper | `context(slug, fn)` / `defineContextHandler` | Active instrumentation: auto file/line discovery, contextual logging |
+| Code annotations | `// SEE: feature "slug" at path` (PEP 350 `SEE` codetag) | Self-documenting, leverages LLM training weight, detects broken refs |
+| Runtime wrapper | `defineFeatureHandler(slug, fn)` / `defineFeaturePlugin` / `defineFeatureComposable` | Active instrumentation: auto file/line discovery, contextual logging |
 | Aspect model | 7 aspects (description → analysis) | Different angles mine different knowledge |
-| Source of truth | `core/docs/knowledge/{slug}/{aspect}.md` | Git-trackable, PR-reviewable, rebuildable seed |
-| Operational store | `/context.db` + `/logs.db` (.gitignored) | Rebuildable from source of truth + repo scan. Delete to reset. |
-| Staleness recovery | Delete `context.db`, rebuild on next `bun run dev` | Nuclear option IS the recovery mechanism |
+| Source of truth | `core/docs/knowledge/{slug}.md` | Git-trackable, PR-reviewable, rebuildable seed |
+| Operational store | `/knowledge.db` + `/logs.db` (.gitignored) | Rebuildable from source of truth + repo scan. Delete to reset. |
+| Staleness recovery | Delete `knowledge.db`, rebuild on next `bun run dev` | Nuclear option IS the recovery mechanism |
 | `analysis` engine | MCP sampling with emulation fallback | Works with any MCP client, not Claude Code-specific |
 | `record()` execution | Sub-agent via MCP sampling ("secretary") | Main agent never leaves the coding task |
 | Slug governance | Exact match at dev time, duplicates caught in code review | Don't interrupt flow with polish — correctness at commit time |
 | Production behavior | Pass-through by default, activatable via runtime settings | Zero cost + on-demand god-mode debugging with AI |
-| DB ownership | Single per repo clone, not per-developer | Shareable context state, simple model, implicit per-dev via clones |
+| DB ownership | Single per repo clone, not per-developer | Shareable knowledge state, simple model, implicit per-dev via clones |
 | Agent instruction source | `AGENTS.md` (committed) | Cross-tool standard, read natively by Cursor/Codex/Amp/Roo Code |
 | Claude Code support | `CLAUDE.md` containing `@AGENTS.md` (committed) | One-line redirect, no generation needed |
 | Tool-specific files | Not needed | AGENTS.md is the universal standard; only Claude Code needs the redirect |

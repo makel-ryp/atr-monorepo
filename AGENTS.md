@@ -26,7 +26,7 @@ Server middleware from ALL layers executes (additive, never overrides).
 - `core/app/` — shared components, composables, layouts, plugins (auto-imported)
 - `core/docs/` — documentation app + MCP server (port 3000)
 - `core/docs/adr/` — architecture decision records (read before architectural changes)
-- `core/docs/knowledge/` — slug-based knowledge base (see Context section)
+- `core/docs/knowledge/` — slug-based feature knowledge (see Feature Knowledge section)
 - `core/server/` — server middleware for cross-cutting concerns
 - `core/cli/dev.js` — smart dev launcher with first-run setup
 - `organization/` — brand config (`app.config.ts`), company assets
@@ -68,40 +68,34 @@ Build orchestration: Turborepo. TypeScript strict mode is on.
 
 ## Conventions
 
-### Code Annotations — `// CONTEXT: slug`
+### Code Annotations — `// SEE: feature "slug"`
 
-Mark code with context slugs to link to deeper knowledge:
+Mark code with feature references to link to deeper knowledge:
 
 ```typescript
-// CONTEXT: rate-limiting — Token bucket inherited from core layer
+// SEE: feature "rate-limiting" at core/docs/knowledge/rate-limiting.md
 export default defineEventHandler(async (event) => { /* ... */ })
 ```
 
-When you encounter a `// CONTEXT: slug` annotation, look up the slug in
-`core/docs/knowledge/{slug}/` before modifying the annotated code.
+When you encounter a `// SEE: feature "slug"` annotation, look up the slug's
+knowledge file before modifying the annotated code. The path after `at` points
+directly to the knowledge file. If the file doesn't exist, create a stub as a
+sub-task — broken references are repair work orders.
 
-Each slug directory can contain these aspect files:
+Knowledge files are single markdown files per slug with YAML frontmatter and H2
+sections for aspects: description, overview, faq, reasoning, details, history.
 
-| File | Purpose |
-|------|---------|
-| `description.md` | One-liner: what is this? |
-| `overview.md` | 5–15 line summary |
-| `faq.md` | Common questions and gotchas |
-| `reasoning.md` | Why this decision was made |
-| `details.md` | Full technical deep-dive |
-| `history.md` | How this evolved |
+### Runtime Feature Wrapper
 
-### Runtime Context Wrapper
-
-Executable code uses `context()` wrappers for slug-tagged instrumentation:
+Executable code uses `defineFeature*()` wrappers for slug-tagged instrumentation:
 
 ```typescript
-export default defineContextHandler('rate-limiting', async (ctx, event) => {
-  ctx.log('checking', event.path)  // tagged logging → logs.db
+export default defineFeatureHandler('rate-limiting', async (feat, event) => {
+  feat.log('checking', event.path)  // tagged logging → logs.db
 })
 ```
 
-Variants: `defineContextHandler`, `defineContextComposable`, `defineContextPlugin`.
+Variants: `defineFeatureHandler`, `defineFeatureComposable`, `defineFeaturePlugin`.
 Production behavior: pass-through (single boolean check, zero overhead).
 
 ### i18n Namespace Convention
@@ -147,17 +141,17 @@ Hot-reloadable settings with `$meta.lock` governance. Provider-agnostic (Postgre
   - `CORE_DATASOURCE_PROVIDER` — which provider to load (default: `supabase`)
   - `CORE_ENVIRONMENT` — environment identifier (falls back to `NODE_ENV`)
 
-## Context Oracle (MCP) — In Progress
+## Feature Knowledge (MCP) — In Progress
 
-The `/docs` app will expose MCP tools for on-demand project knowledge:
+The `/docs` app exposes MCP tools for on-demand feature knowledge:
 
-- `explain(slug, aspect)` — read context for any slug
+- `explain(slug, aspect)` — read knowledge for any feature slug
 - `record(slug, aspect, content)` — capture knowledge during work sessions
 
 If your tool supports MCP, connect to the docs app server (port 3000).
-If not, read `core/docs/knowledge/{slug}/{aspect}.md` directly.
+If not, read `core/docs/knowledge/{slug}.md` directly.
 
-Don't pre-load all documentation. Ask for context when you need it.
+Don't pre-load all documentation. Ask for knowledge when you need it.
 
 ## ADRs
 
@@ -170,8 +164,9 @@ Read these before making architectural changes (`core/docs/adr/NNN-title.md`):
 | 003 | Developer experience and documentation |
 | 004 | Layer cascade, i18n, cross-cutting concerns |
 | 005 | Runtime configuration service |
-| 006 | Context oracle (this system — in progress) |
+| 006 | Feature knowledge system (in progress) |
 | 007 | Testing strategy (vitest, @nuxt/test-utils, directory structure) |
+| 008 | Naming: "context" → "feature" (rationale for the rename) |
 
 ## Rules
 
