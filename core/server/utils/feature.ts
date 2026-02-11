@@ -8,6 +8,8 @@ export interface FeatureScope {
   warn: (message: string, ...data: any[]) => void
   error: (message: string, ...data: any[]) => void
   meta: Record<string, any>
+  feature: <T>(childSlug: string, fn: (feat: FeatureScope) => T) => T
+  getFeature: (otherSlug: string) => FeatureScope
 }
 
 function formatData(data: any[]): string | undefined {
@@ -22,14 +24,16 @@ function formatData(data: any[]): string | undefined {
 
 export function createFeatureScope(slug: string): FeatureScope {
   const prefix = `[${slug}]`
+  const featureCache = new Map<string, FeatureScope>()
 
-  return {
+  const scope: FeatureScope = {
     slug,
     meta: {},
 
     log(message: string, ...data: any[]) {
       if (import.meta.dev) {
         writeLog(slug, 'log', message, formatData(data))
+        incrementLogCount(slug)
       }
       if (data.length > 0) {
         console.log(prefix, message, ...data)
@@ -42,6 +46,7 @@ export function createFeatureScope(slug: string): FeatureScope {
     warn(message: string, ...data: any[]) {
       if (import.meta.dev) {
         writeLog(slug, 'warn', message, formatData(data))
+        incrementLogCount(slug)
       }
       if (data.length > 0) {
         console.warn(prefix, message, ...data)
@@ -54,6 +59,7 @@ export function createFeatureScope(slug: string): FeatureScope {
     error(message: string, ...data: any[]) {
       if (import.meta.dev) {
         writeLog(slug, 'error', message, formatData(data))
+        incrementLogCount(slug)
       }
       if (data.length > 0) {
         console.error(prefix, message, ...data)
@@ -62,7 +68,29 @@ export function createFeatureScope(slug: string): FeatureScope {
         console.error(prefix, message)
       }
     },
+
+    feature<T>(childSlug: string, fn: (feat: FeatureScope) => T): T {
+      if (import.meta.dev) {
+        recordEdge(slug, childSlug, 'contains')
+      }
+      const childScope = createFeatureScope(childSlug)
+      return fn(childScope)
+    },
+
+    getFeature(otherSlug: string): FeatureScope {
+      if (import.meta.dev) {
+        recordEdge(slug, otherSlug, 'uses')
+      }
+      let cached = featureCache.get(otherSlug)
+      if (!cached) {
+        cached = createFeatureScope(otherSlug)
+        featureCache.set(otherSlug, cached)
+      }
+      return cached
+    },
   }
+
+  return scope
 }
 
 export function defineFeatureHandler<T extends EventHandlerRequest = EventHandlerRequest, D = unknown>(
@@ -70,7 +98,15 @@ export function defineFeatureHandler<T extends EventHandlerRequest = EventHandle
   handler: (feat: FeatureScope, event: H3Event<T>) => D | Promise<D>
 ): EventHandler<T, D> {
   const feat = createFeatureScope(slug)
-  return defineEventHandler<T, D>((event) => handler(feat, event))
+  if (import.meta.dev) {
+    registerFeature(slug, 'handler')
+  }
+  return defineEventHandler<T, D>((event) => {
+    if (import.meta.dev) {
+      incrementInvocations(slug)
+    }
+    return handler(feat, event)
+  })
 }
 
 export function defineFeaturePlugin(
@@ -78,5 +114,13 @@ export function defineFeaturePlugin(
   plugin: (feat: FeatureScope, nitroApp: NitroApp) => void | Promise<void>
 ): (nitroApp: NitroApp) => void | Promise<void> {
   const feat = createFeatureScope(slug)
-  return defineNitroPlugin((nitroApp) => plugin(feat, nitroApp))
+  if (import.meta.dev) {
+    registerFeature(slug, 'plugin')
+  }
+  return defineNitroPlugin((nitroApp) => {
+    if (import.meta.dev) {
+      incrementInvocations(slug)
+    }
+    return plugin(feat, nitroApp)
+  })
 }

@@ -134,4 +134,71 @@ describe('defineFeatureComposable', () => {
     expect(comp1()).toBe('scope-a')
     expect(comp2()).toBe('scope-b')
   })
+
+  test('feat has feature() method', () => {
+    const composable = defineFeatureComposable('parent', (feat) => {
+      return typeof feat.feature
+    })
+    expect(composable()).toBe('function')
+  })
+
+  test('feat has getFeature() method', () => {
+    const composable = defineFeatureComposable('parent', (feat) => {
+      return typeof feat.getFeature
+    })
+    expect(composable()).toBe('function')
+  })
+
+  test('feat.feature() creates child scope and returns value', () => {
+    const composable = defineFeatureComposable('parent', (feat) => {
+      return feat.feature('child', (child) => {
+        child.log('from child')
+        return child.slug
+      })
+    })
+    expect(composable()).toBe('child')
+    expect(logSpy).toHaveBeenCalledWith('[child]', 'from child')
+  })
+
+  test('feat.feature() creates fresh scope each call', () => {
+    const scopes: any[] = []
+    const composable = defineFeatureComposable('parent', (feat) => {
+      feat.feature('child', (child) => { scopes.push(child) })
+      feat.feature('child', (child) => { scopes.push(child) })
+    })
+    composable()
+    expect(scopes[0]).not.toBe(scopes[1])
+  })
+
+  test('feat.getFeature() returns cached scope', () => {
+    const composable = defineFeatureComposable('consumer', (feat) => {
+      const dep1 = feat.getFeature('provider')
+      const dep2 = feat.getFeature('provider')
+      return dep1 === dep2
+    })
+    expect(composable()).toBe(true)
+  })
+
+  test('feat.getFeature() meta persists', () => {
+    const composable = defineFeatureComposable('consumer', (feat) => {
+      feat.getFeature('provider').meta.count = 42
+      return feat.getFeature('provider').meta.count
+    })
+    expect(composable()).toBe(42)
+  })
+
+  test('feat.getFeature() returns scope with correct slug', () => {
+    const composable = defineFeatureComposable('consumer', (feat) => {
+      return feat.getFeature('some-dep').slug
+    })
+    expect(composable()).toBe('some-dep')
+  })
+
+  test('nested feature() inside getFeature() works', () => {
+    const composable = defineFeatureComposable('consumer', (feat) => {
+      const dep = feat.getFeature('provider')
+      return dep.feature('sub', (sub) => sub.slug)
+    })
+    expect(composable()).toBe('sub')
+  })
 })
