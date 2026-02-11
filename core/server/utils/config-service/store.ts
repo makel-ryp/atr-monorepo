@@ -1,6 +1,7 @@
 // CONTEXT: runtime-config — ConfigStore singleton with in-memory cache (ADR-005 Part 6)
 import type { ConfigProvider, ConfigLayer, ConfigHistory, MergeResult, WriteHistoryInput, LayerResolutionContext } from './types'
 import { mergeWithGovernance, computeConfigDiff } from './merge'
+import { setNestedValue, deleteNestedValue } from './paths'
 
 let _store: ConfigStore | null = null
 
