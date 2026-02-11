@@ -55,7 +55,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys (server-side only)
     apiSecret: '',
-    todo: { enabled: true },
+    rateLimiter: { enabled: false, tokensPerInterval: 150, interval: 300000 },
     // Public keys (exposed to client)
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3001/api',

@@ -11,7 +11,7 @@ vi.stubGlobal('createError', vi.fn((opts: any) => new Error(opts.statusMessage |
 // Stub response helpers (used by health endpoint, middleware, etc.)
 vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
   apiSecret: '',
-  todo: { enabled: true },
+  rateLimiter: { enabled: false, tokensPerInterval: 150, interval: 300000 },
   public: {
     apiBase: 'http://localhost:3001/api',
     appVersion: '0.0.0',
@@ -20,10 +20,17 @@ vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
 })))
 vi.stubGlobal('setResponseStatus', vi.fn())
 vi.stubGlobal('setResponseHeader', vi.fn())
+vi.stubGlobal('getResponseStatus', vi.fn(() => 200))
 vi.stubGlobal('getRouterParam', vi.fn())
+vi.stubGlobal('getRequestIP', vi.fn(() => '127.0.0.1'))
 
 // Stub writeLog (auto-imported from server/utils/logs-db.ts)
 vi.stubGlobal('writeLog', vi.fn())
+
+// Stub context wrappers (auto-imported from server/utils/context.ts)
+vi.stubGlobal('createContextScope', (await import('../server/utils/context')).createContextScope)
+vi.stubGlobal('defineContextHandler', (await import('../server/utils/context')).defineContextHandler)
+vi.stubGlobal('defineContextPlugin', (await import('../server/utils/context')).defineContextPlugin)
 
 // Stub config-service auto-imports
 vi.stubGlobal('getConfigStore', vi.fn(() => null))
