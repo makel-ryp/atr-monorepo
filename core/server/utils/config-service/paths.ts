@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — Dot-notation path utilities for nested config access
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 
 /**
  * Get a value from a nested object using dot-notation path.

@@ -46,6 +46,6 @@ demos/chat/.data
 # Test coverage
 coverage/
 
-# Context Oracle operational databases (rebuildable from source of truth)
-context.db
+# Feature knowledge operational databases (rebuildable from source of truth)
+knowledge.db
 logs.db

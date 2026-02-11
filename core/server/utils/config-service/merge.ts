@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — Deep merge engine with $meta.lock governance (ADR-005 Part 2-3)
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 import type { ConfigLayer, MergeOrder, MergeResult } from './types'
 import { flattenConfig } from './paths'
 

@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — Provider factory for config service (ADR-005)
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 //
 // Reads CORE_DATASOURCE_* from process.env (NOT runtimeConfig).
 // This keeps the datasource config out of the Nuxt config shape,

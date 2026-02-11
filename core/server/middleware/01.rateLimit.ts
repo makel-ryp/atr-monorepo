@@ -1,7 +1,7 @@
-// CONTEXT: rate-limiting — Token bucket rate limiter inherited from core layer
+// SEE: feature "rate-limiting" at core/docs/knowledge/rate-limiting.md
 const buckets = new Map<string, { tokens: number, lastRefill: number }>()
 
-export default defineContextHandler('rate-limiting', (ctx, event) => {
+export default defineFeatureHandler('rate-limiting', (feat, event) => {
   const config = useRuntimeConfig(event)
   if ((config as any).rateLimiter?.enabled === false) return
 

@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — ConfigStore singleton with in-memory cache (ADR-005 Part 6)
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 import type { ConfigProvider, ConfigLayer, ConfigHistory, MergeResult, WriteHistoryInput, LayerResolutionContext } from './types'
 import { mergeWithGovernance, computeConfigDiff } from './merge'
 import { setNestedValue, deleteNestedValue } from './paths'

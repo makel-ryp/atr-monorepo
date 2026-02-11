@@ -35,13 +35,13 @@ CREATE TABLE IF NOT EXISTS file_mappings (
 );
 `
 
-export function getContextDb(): InstanceType<typeof Database> | null {
+export function getKnowledgeDb(): InstanceType<typeof Database> | null {
   // undefined = not yet initialized, null = failed to initialize
   if (db !== undefined) return db
 
   try {
-    // cwd is the running app (docs/), context.db lives at project root
-    const dbPath = join(process.cwd(), '..', 'context.db')
+    // cwd is the running app (docs/), knowledge.db lives at project root
+    const dbPath = join(process.cwd(), '..', 'knowledge.db')
     db = new Database(dbPath)
     db.exec(SCHEMA)
     return db
@@ -54,7 +54,7 @@ export function getContextDb(): InstanceType<typeof Database> | null {
 
 export function logQuery(slug: string, aspect: string | undefined): void {
   try {
-    const conn = getContextDb()
+    const conn = getKnowledgeDb()
     if (!conn) return
 
     conn.prepare(`
@@ -67,13 +67,13 @@ export function logQuery(slug: string, aspect: string | undefined): void {
     `).run(slug, aspect ?? null)
   }
   catch {
-    // Silent — context.db is optional
+    // Silent — knowledge.db is optional
   }
 }
 
 export function logChange(slug: string, aspect: string, changeType: 'created' | 'updated' | 'stale'): void {
   try {
-    const conn = getContextDb()
+    const conn = getKnowledgeDb()
     if (!conn) return
 
     conn.prepare(`
@@ -86,6 +86,6 @@ export function logChange(slug: string, aspect: string, changeType: 'created' | 
     `).run(slug, aspect, changeType)
   }
   catch {
-    // Silent — context.db is optional
+    // Silent — knowledge.db is optional
   }
 }

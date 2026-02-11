@@ -1,8 +1,8 @@
-// CONTEXT: context-oracle — Server-side runtime context wrapper
+// SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import type { NitroApp } from 'nitropack/types'
 
-export interface ContextScope {
+export interface FeatureScope {
   slug: string
   log: (message: string, ...data: any[]) => void
   warn: (message: string, ...data: any[]) => void
@@ -20,7 +20,7 @@ function formatData(data: any[]): string | undefined {
   catch { return data.map(String).join(' ') }
 }
 
-export function createContextScope(slug: string): ContextScope {
+export function createFeatureScope(slug: string): FeatureScope {
   const prefix = `[${slug}]`
 
   return {
@@ -65,18 +65,18 @@ export function createContextScope(slug: string): ContextScope {
   }
 }
 
-export function defineContextHandler<T extends EventHandlerRequest = EventHandlerRequest, D = unknown>(
+export function defineFeatureHandler<T extends EventHandlerRequest = EventHandlerRequest, D = unknown>(
   slug: string,
-  handler: (ctx: ContextScope, event: H3Event<T>) => D | Promise<D>
+  handler: (feat: FeatureScope, event: H3Event<T>) => D | Promise<D>
 ): EventHandler<T, D> {
-  const ctx = createContextScope(slug)
-  return defineEventHandler<T, D>((event) => handler(ctx, event))
+  const feat = createFeatureScope(slug)
+  return defineEventHandler<T, D>((event) => handler(feat, event))
 }
 
-export function defineContextPlugin(
+export function defineFeaturePlugin(
   slug: string,
-  plugin: (ctx: ContextScope, nitroApp: NitroApp) => void | Promise<void>
+  plugin: (feat: FeatureScope, nitroApp: NitroApp) => void | Promise<void>
 ): (nitroApp: NitroApp) => void | Promise<void> {
-  const ctx = createContextScope(slug)
-  return defineNitroPlugin((nitroApp) => plugin(ctx, nitroApp))
+  const feat = createFeatureScope(slug)
+  return defineNitroPlugin((nitroApp) => plugin(feat, nitroApp))
 }

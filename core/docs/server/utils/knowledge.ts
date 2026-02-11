@@ -1,4 +1,4 @@
-// CONTEXT: context-oracle — Knowledge base utilities for single-file-per-slug markdown format
+// SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 //
 // Each slug is a single markdown file: knowledge/{slug}.md
 // Format: YAML frontmatter (title, description) + H2 sections (overview, faq, reasoning, details, history)

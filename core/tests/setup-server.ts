@@ -1,6 +1,6 @@
 import { vi } from 'vitest'
 
-// Stub Nitro auto-imports that context.ts depends on
+// Stub Nitro auto-imports that feature.ts depends on
 vi.stubGlobal('defineEventHandler', vi.fn((handler: Function) => handler))
 vi.stubGlobal('defineNitroPlugin', vi.fn((plugin: Function) => plugin))
 vi.stubGlobal('readBody', vi.fn())
@@ -27,10 +27,10 @@ vi.stubGlobal('getRequestIP', vi.fn(() => '127.0.0.1'))
 // Stub writeLog (auto-imported from server/utils/logs-db.ts)
 vi.stubGlobal('writeLog', vi.fn())
 
-// Stub context wrappers (auto-imported from server/utils/context.ts)
-vi.stubGlobal('createContextScope', (await import('../server/utils/context')).createContextScope)
-vi.stubGlobal('defineContextHandler', (await import('../server/utils/context')).defineContextHandler)
-vi.stubGlobal('defineContextPlugin', (await import('../server/utils/context')).defineContextPlugin)
+// Stub feature wrappers (auto-imported from server/utils/feature.ts)
+vi.stubGlobal('createFeatureScope', (await import('../server/utils/feature')).createFeatureScope)
+vi.stubGlobal('defineFeatureHandler', (await import('../server/utils/feature')).defineFeatureHandler)
+vi.stubGlobal('defineFeaturePlugin', (await import('../server/utils/feature')).defineFeaturePlugin)
 
 // Stub config-service auto-imports
 vi.stubGlobal('getConfigStore', vi.fn(() => null))

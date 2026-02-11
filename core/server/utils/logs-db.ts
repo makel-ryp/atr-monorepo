@@ -1,4 +1,4 @@
-// CONTEXT: context-oracle — SQLite backing store for context() runtime logging
+// SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
 import Database from 'better-sqlite3'

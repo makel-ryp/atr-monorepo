@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — PUT /api/settings/:key — update a setting in a layer
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 export default defineEventHandler(async (event) => {
   const store = getConfigStore()
   if (!store) {

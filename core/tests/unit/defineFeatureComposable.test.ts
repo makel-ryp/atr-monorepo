@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { defineContextComposable } from '../../app/composables/defineContextComposable'
+import { defineFeatureComposable } from '../../app/composables/defineFeatureComposable'
 
-describe('defineContextComposable', () => {
+describe('defineFeatureComposable', () => {
   let logSpy: ReturnType<typeof vi.fn>
   let warnSpy: ReturnType<typeof vi.fn>
   let errorSpy: ReturnType<typeof vi.fn>
@@ -16,57 +16,57 @@ describe('defineContextComposable', () => {
   })
 
   test('returns a callable function', () => {
-    const composable = defineContextComposable('test-slug', (ctx) => {
+    const composable = defineFeatureComposable('test-slug', (feat) => {
       return { value: 42 }
     })
     expect(typeof composable).toBe('function')
   })
 
-  test('composable receives ctx with correct slug', () => {
+  test('composable receives feat with correct slug', () => {
     let receivedSlug: string | undefined
-    const composable = defineContextComposable('my-feature', (ctx) => {
-      receivedSlug = ctx.slug
+    const composable = defineFeatureComposable('my-feature', (feat) => {
+      receivedSlug = feat.slug
     })
     composable()
     expect(receivedSlug).toBe('my-feature')
   })
 
-  test('ctx has empty meta object', () => {
+  test('feat has empty meta object', () => {
     let receivedMeta: Record<string, any> | undefined
-    const composable = defineContextComposable('meta-test', (ctx) => {
-      receivedMeta = ctx.meta
+    const composable = defineFeatureComposable('meta-test', (feat) => {
+      receivedMeta = feat.meta
     })
     composable()
     expect(receivedMeta).toEqual({})
   })
 
-  test('ctx.log calls console.log with [slug] prefix', () => {
-    const composable = defineContextComposable('rate-limiting', (ctx) => {
-      ctx.log('checking request')
+  test('feat.log calls console.log with [slug] prefix', () => {
+    const composable = defineFeatureComposable('rate-limiting', (feat) => {
+      feat.log('checking request')
     })
     composable()
     expect(logSpy).toHaveBeenCalledWith('[rate-limiting]', 'checking request')
   })
 
-  test('ctx.warn calls console.warn with [slug] prefix', () => {
-    const composable = defineContextComposable('auth', (ctx) => {
-      ctx.warn('token expiring soon')
+  test('feat.warn calls console.warn with [slug] prefix', () => {
+    const composable = defineFeatureComposable('auth', (feat) => {
+      feat.warn('token expiring soon')
     })
     composable()
     expect(warnSpy).toHaveBeenCalledWith('[auth]', 'token expiring soon')
   })
 
-  test('ctx.error calls console.error with [slug] prefix', () => {
-    const composable = defineContextComposable('db-pool', (ctx) => {
-      ctx.error('connection failed')
+  test('feat.error calls console.error with [slug] prefix', () => {
+    const composable = defineFeatureComposable('db-pool', (feat) => {
+      feat.error('connection failed')
     })
     composable()
     expect(errorSpy).toHaveBeenCalledWith('[db-pool]', 'connection failed')
   })
 
-  test('ctx.log passes extra data arguments', () => {
-    const composable = defineContextComposable('api', (ctx) => {
-      ctx.log('response', { status: 200 }, 'extra')
+  test('feat.log passes extra data arguments', () => {
+    const composable = defineFeatureComposable('api', (feat) => {
+      feat.log('response', { status: 200 }, 'extra')
     })
     composable()
     expect(logSpy).toHaveBeenCalledWith('[api]', 'response', { status: 200 }, 'extra')
@@ -74,9 +74,9 @@ describe('defineContextComposable', () => {
 
   test('composable forwards arguments', () => {
     let receivedArgs: any[] = []
-    const composable = defineContextComposable<[string, number], void>(
+    const composable = defineFeatureComposable<[string, number], void>(
       'args-test',
-      (ctx, name, count) => {
+      (feat, name, count) => {
         receivedArgs = [name, count]
       }
     )
@@ -85,7 +85,7 @@ describe('defineContextComposable', () => {
   })
 
   test('composable returns value from inner function', () => {
-    const composable = defineContextComposable('return-test', (ctx) => {
+    const composable = defineFeatureComposable('return-test', (feat) => {
       return { canProceed: true, remaining: 5 }
     })
     const result = composable()
@@ -93,10 +93,10 @@ describe('defineContextComposable', () => {
   })
 
   test('composable with args and return value', () => {
-    const add = defineContextComposable<[number, number], number>(
+    const add = defineFeatureComposable<[number, number], number>(
       'math',
-      (ctx, a, b) => {
-        ctx.log('adding', a, b)
+      (feat, a, b) => {
+        feat.log('adding', a, b)
         return a + b
       }
     )
@@ -105,23 +105,23 @@ describe('defineContextComposable', () => {
     expect(logSpy).toHaveBeenCalledWith('[math]', 'adding', 3, 7)
   })
 
-  test('same ctx instance is reused across calls', () => {
+  test('same feat instance is reused across calls', () => {
     const slugsSeen: string[] = []
-    const composable = defineContextComposable('reuse-test', (ctx) => {
-      slugsSeen.push(ctx.slug)
-      return ctx
+    const composable = defineFeatureComposable('reuse-test', (feat) => {
+      slugsSeen.push(feat.slug)
+      return feat
     })
-    const ctx1 = composable()
-    const ctx2 = composable()
-    expect(ctx1).toBe(ctx2)
+    const feat1 = composable()
+    const feat2 = composable()
+    expect(feat1).toBe(feat2)
     expect(slugsSeen).toEqual(['reuse-test', 'reuse-test'])
   })
 
   test('meta can be mutated and persists across calls', () => {
-    const composable = defineContextComposable('meta-persist', (ctx) => {
-      if (!ctx.meta.count) ctx.meta.count = 0
-      ctx.meta.count++
-      return ctx.meta.count
+    const composable = defineFeatureComposable('meta-persist', (feat) => {
+      if (!feat.meta.count) feat.meta.count = 0
+      feat.meta.count++
+      return feat.meta.count
     })
     expect(composable()).toBe(1)
     expect(composable()).toBe(2)
@@ -129,8 +129,8 @@ describe('defineContextComposable', () => {
   })
 
   test('different composables have independent scopes', () => {
-    const comp1 = defineContextComposable('scope-a', (ctx) => ctx.slug)
-    const comp2 = defineContextComposable('scope-b', (ctx) => ctx.slug)
+    const comp1 = defineFeatureComposable('scope-a', (feat) => feat.slug)
+    const comp2 = defineFeatureComposable('scope-b', (feat) => feat.slug)
     expect(comp1()).toBe('scope-a')
     expect(comp2()).toBe('scope-b')
   })

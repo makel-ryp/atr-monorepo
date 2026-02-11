@@ -1,5 +1,5 @@
-// CONTEXT: structured-logging — Emits structured JSON log after each response
-export default defineContextPlugin('structured-logging', (ctx, nitroApp) => {
+// SEE: feature "structured-logging" at core/docs/knowledge/structured-logging.md
+export default defineFeaturePlugin('structured-logging', (feat, nitroApp) => {
   nitroApp.hooks.hook('afterResponse', (event) => {
     const log = event.context?.log
     if (!log) return

@@ -1,10 +1,10 @@
-// CONTEXT: runtime-config — Nitro plugin: initializes config service + realtime subscription (ADR-005)
-export default defineContextPlugin('runtime-config', async (ctx, nitroApp) => {
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
+export default defineFeaturePlugin('runtime-config', async (feat, nitroApp) => {
   const provider = createConfigProvider()
 
   if (!provider) {
-    ctx.warn('Core datasource not configured — runtime config service disabled')
-    ctx.warn('Set CORE_DATASOURCE_URL, CORE_DATASOURCE_KEY, and CORE_DATASOURCE_PROVIDER in .env')
+    feat.warn('Core datasource not configured — runtime config service disabled')
+    feat.warn('Set CORE_DATASOURCE_URL, CORE_DATASOURCE_KEY, and CORE_DATASOURCE_PROVIDER in .env')
     return
   }
 
@@ -18,23 +18,23 @@ export default defineContextPlugin('runtime-config', async (ctx, nitroApp) => {
 
     // Pre-load layers for this app into cache
     const layers = await store.getLayersForApp(appId, environment)
-    ctx.log(`Loaded ${layers.length} config layer(s) for ${appId}/${environment} from ${process.env.CORE_DATASOURCE_PROVIDER || 'supabase'} datasource`)
+    feat.log(`Loaded ${layers.length} config layer(s) for ${appId}/${environment} from ${process.env.CORE_DATASOURCE_PROVIDER || 'supabase'} datasource`)
 
     // Subscribe to realtime changes
     await store.subscribe((event) => {
-      ctx.log(`Config change: ${event.eventType} on ${event.table}`)
+      feat.log(`Config change: ${event.eventType} on ${event.table}`)
       store.invalidate()
     })
 
-    ctx.log('Runtime config service ready')
+    feat.log('Runtime config service ready')
 
     // Cleanup on shutdown
     nitroApp.hooks.hook('close', async () => {
       await store.destroy()
-      ctx.log('Runtime config service shut down')
+      feat.log('Runtime config service shut down')
     })
   } catch (err: any) {
-    ctx.error('Failed to initialize config service', err.message)
-    ctx.warn('Runtime config service disabled — app will use static config only')
+    feat.error('Failed to initialize config service', err.message)
+    feat.warn('Runtime config service disabled — app will use static config only')
   }
 })

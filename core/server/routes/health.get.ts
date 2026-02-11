@@ -1,4 +1,4 @@
-// CONTEXT: health-checks — IETF draft-inadarei-api-health-check-06 health endpoint
+// SEE: feature "health-checks" at core/docs/knowledge/health-checks.md
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
 

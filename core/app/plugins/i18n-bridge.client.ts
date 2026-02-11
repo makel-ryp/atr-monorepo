@@ -1,4 +1,4 @@
-// CONTEXT: i18n-layers — Bridges @nuxtjs/i18n locale selection to Nuxt UI component translations
+// SEE: feature "i18n-layers" at core/docs/knowledge/i18n-layers.md
 import * as uiLocales from '@nuxt/ui/locale'
 
 export default defineNuxtPlugin((nuxtApp) => {

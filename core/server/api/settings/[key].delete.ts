@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — DELETE /api/settings/:key — remove a setting from a layer
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 export default defineEventHandler(async (event) => {
   const store = getConfigStore()
   if (!store) {

@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — GET /api/settings — returns effective merged config
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 export default defineEventHandler(async (event) => {
   const store = getConfigStore()
   if (!store) {

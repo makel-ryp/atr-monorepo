@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — Type definitions for the runtime configuration service (ADR-005)
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 
 export interface ConfigLayer {
   id: string

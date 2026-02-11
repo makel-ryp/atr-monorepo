@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — GET /api/settings/stats — config service statistics
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 export default defineEventHandler(async () => {
   const store = getConfigStore()
   if (!store) {

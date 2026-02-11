@@ -23,7 +23,7 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
   ],
 
-  // CONTEXT: i18n-layers — Core i18n config; layers inherit and add their own locale files
+  // SEE: feature "i18n-layers" at core/docs/knowledge/i18n-layers.md
   i18n: {
     lazy: true,
     langDir: '../i18n/locales',

@@ -1,4 +1,4 @@
-// CONTEXT: context-oracle — Read-only access to logs.db for MCP tools
+// SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import Database from 'better-sqlite3'

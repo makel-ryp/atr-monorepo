@@ -1,4 +1,4 @@
-// CONTEXT: runtime-config — Supabase implementation of ConfigProvider (ADR-005)
+// SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
 import type { ConfigProvider, ConfigLayer, ConfigHistory, ConfigChangeEvent, WriteHistoryInput } from './types'

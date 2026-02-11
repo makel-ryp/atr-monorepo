@@ -1,7 +1,9 @@
-# ADR-006: Context Oracle — Replacing Static Documentation with On-Demand Knowledge
+# ADR-006: Feature Knowledge — Replacing Static Documentation with On-Demand Knowledge
 
 ## Status
 **Draft — Exploratory**
+
+> **Naming update (ADR-008):** This ADR originally used "context" as the umbrella term (Context Oracle, `// CONTEXT:`, `defineContextHandler`, `ContextScope`). ADR-008 renamed everything to "feature" as the noun (`// SEE: feature`, `defineFeatureHandler`, `FeatureScope`) and dropped the "oracle" branding in favor of "feature knowledge." The rationale: "context" collides with OpenTelemetry, React, and feature flag SDKs; "feature" correctly identifies what slugs represent (units of functionality, including infrastructure). Code examples below use the updated naming.
 
 ## Date
 2026-02-07
@@ -51,9 +53,9 @@ A human doesn't read all the ADRs before starting work. They encounter something
 
 ---
 
-## The Design: Context Slugs + Context Oracle
+## The Design: Feature Slugs + Feature Knowledge
 
-### Context Slugs as Universal Identifiers
+### Feature Slugs as Universal Identifiers
 
 Every meaningful concept in the codebase gets a **slug** — a short, descriptive, human-readable identifier. Not a numeric ID. Not a file path. A name.
 
@@ -74,21 +76,21 @@ Slugs are:
 
 ### Two Forms of Code Annotation
 
-#### 1. `// CONTEXT:` Comments — Static Breadcrumbs
+#### 1. `// SEE: feature` Comments — Static Breadcrumbs
 
 For code that can't be wrapped in a function (config files, templates, .env, .svg, markdown, or inline markers within larger blocks):
 
 ```typescript
-// CONTEXT: rate-limiting — Token bucket rate limiter inherited from core layer
+// SEE: feature "rate-limiting" at core/docs/knowledge/rate-limiting.md
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
-  if (config.rateLimiter?.enabled === false) return  // CONTEXT: rate-limiting — Disable via runtimeConfig flag
+  if (config.rateLimiter?.enabled === false) return
   // ...
 })
 ```
 
 ```typescript
-// CONTEXT: meta-lock — Locked paths cannot be overridden by lower-priority tiers
+// SEE: feature "meta-lock" at core/docs/knowledge/meta-lock.md
 function mergeWithGovernance(layers) {
   const lockedPaths = new Set()
   // ...
@@ -96,20 +98,21 @@ function mergeWithGovernance(layers) {
 ```
 
 ```vue
-<!-- CONTEXT: i18n-layers — Bridge @nuxtjs/i18n locale to Nuxt UI -->
+<!-- SEE: feature "i18n-layers" at core/docs/knowledge/i18n-layers.md -->
 <UApp :locale="uiLocale">
   <NuxtPage />
 </UApp>
 ```
 
-**Why `CONTEXT:` and not `FEATURE:`, `TODO:`, `NOTE:`, etc.:**
-- "Context" is the universal concept. A slug might be a feature, a decision, a mechanism, a pattern, or a cautionary tale. "Context" covers all of them.
-- For AI agents, "context" is one of the highest-activation tokens in latent space. Encountering `// CONTEXT: slug` doesn't just label — it primes the agent to think "there's more to know here, I should look this up before I touch this."
-- It's shorter than `FEATURE` and more precise than `NOTE`.
+**Why `SEE:` with `feature` (ADR-008):**
+- `SEE` is PEP 350's established cross-reference codetag — LLMs have heavy training weight on it. Encountering `// SEE:` activates "look this up" semantics.
+- The full path makes the annotation self-documenting and actionable without MCP or any special tooling.
+- `feature` identifies what the slug represents. In software product line terminology (and Kconfig), a feature is any selectable unit of functionality — including infrastructure like `rate-limiting` or `defu-merge`.
+- Broken references (missing knowledge files) are detectable and trigger self-healing repair tasks.
 
-#### 2. `context()` Runtime Wrapper — Active Instrumentation
+#### 2. `defineFeature*()` Runtime Wrapper — Active Instrumentation
 
-For executable code, a `context()` wrapper provides runtime introspection:
+For executable code, a `defineFeature*()` wrapper provides runtime introspection:
 
 ```typescript
 // Instead of:
@@ -119,8 +122,8 @@ export default defineEventHandler(async (event) => {
 })
 
 // Wrapped:
-export default defineContextHandler('rate-limiting', async (ctx, event) => {
-  ctx.log('checking', event.path)  // tagged to slug, stored in logs.db
+export default defineFeatureHandler('rate-limiting', async (feat, event) => {
+  feat.log('checking', event.path)  // tagged to slug, stored in logs.db
   // ...
 })
 ```
@@ -130,12 +133,12 @@ What the runtime wrapper provides:
 | Capability | How |
 |------------|-----|
 | **Auto file/line discovery** | Stack introspection at call time — automatically registers which files and line ranges implement a slug |
-| **Contextual logging** | `ctx.log()` routes to `logs.db`, tagged by slug. Debugging `rate-limiting`? Get ONLY rate-limiting logs |
+| **Contextual logging** | `feat.log()` routes to `logs.db`, tagged by slug. Debugging `rate-limiting`? Get ONLY rate-limiting logs |
 | **Cross-restart persistence** | Logs survive server restarts — `logs.db` persists across HMR and `bun run dev` cycles |
 | **Runtime telemetry per slug** | Hit counts, timing, error rates — the `analysis` aspect can reference actual runtime behavior |
 | **Scoped log retrieval** | Query last N logs for a specific slug — no more searching through undifferentiated console output |
 
-The `// CONTEXT:` comments are the static breadcrumbs — they work everywhere, any file type, zero runtime cost. The `context()` wrapper is the active instrumentation — it only applies to executable code but provides dramatically richer data.
+The `// SEE:` comments are the static breadcrumbs — they work everywhere, any file type, zero runtime cost. The `defineFeature*()` wrapper is the active instrumentation — it only applies to executable code but provides dramatically richer data.
 
 **Production behavior:** In production, the wrapper is a pass-through — a single boolean check, then straight to the wrapped function. No stack introspection, no logging, no DB writes. The cost is nanoseconds per major functionality boundary (these wrap handlers and plugins, never tight loops — wrapping inside loops is a code review flag).
 
@@ -158,13 +161,13 @@ This is dramatically better than a blind rollback. You get AI-assisted live debu
 
 ```typescript
 // Server handler
-export default defineContextHandler('rate-limiting', async (ctx, event) => { ... })
+export default defineFeatureHandler('rate-limiting', async (feat, event) => { ... })
 
 // Composable
-export const useRateLimit = defineContextComposable('rate-limiting', (ctx) => { ... })
+export const useRateLimit = defineFeatureComposable('rate-limiting', (feat) => { ... })
 
 // Nitro plugin
-export default defineContextPlugin('rate-limiting', async (ctx, nitroApp) => { ... })
+export default defineFeaturePlugin('rate-limiting', async (feat, nitroApp) => { ... })
 ```
 
 ### The `explain()` MCP Tool — Reading Context
@@ -258,22 +261,22 @@ This is what survives if everything else burns down. It's the seed that can rebu
 ### Tier 2: Operational Context (local, .gitignored, rebuildable)
 
 ```
-/context.db      ← operational knowledge: slug registry, file/line mappings,
+/knowledge.db    ← operational knowledge: slug registry, file/line mappings,
                    staleness flags, change history, query history, metadata
-/logs.db         ← runtime logs tagged by slug via context.log()
+/logs.db         ← runtime logs tagged by slug via feat.log()
 ```
 
 Both files live at project root and are `.gitignored`.
 
-**`context.db` contains:**
-- Slug registry — all known slugs, their source files, line ranges (from both `// CONTEXT:` scans and `context()` wrapper registration)
+**`knowledge.db` contains:**
+- Slug registry — all known slugs, their source files, line ranges (from both `// SEE:` scans and `defineFeature*()` wrapper registration)
 - Change metadata — when each aspect was last updated, what triggered it, by whom
 - Query history — which slugs were looked up, how often, which aspects (helps identify what knowledge is actually used)
 - Staleness flags — when a slug was flagged stale and why
-- File/line index — maps slugs to every file and line range that references them (built from `// CONTEXT:` scanning + `context()` stack introspection)
+- File/line index — maps slugs to every file and line range that references them (built from `// SEE:` scanning + `defineFeature*()` stack introspection)
 
 **`logs.db` contains:**
-- Runtime logs from `ctx.log()` calls, tagged by slug
+- Runtime logs from `feat.log()` calls, tagged by slug
 - Survives HMR and server restarts
 - Queryable: "last 10 logs for `rate-limiting`" returns only rate-limiting output
 - Represents the current work, not historical archive — encourages regular cleanup and retros
@@ -281,33 +284,33 @@ Both files live at project root and are `.gitignored`.
 
 ### The Bootstrap Protocol: Staleness = Delete and Rebuild
 
-`context.db` and `logs.db` are caches, not sources of truth. The rebuild protocol:
+`knowledge.db` and `logs.db` are caches, not sources of truth. The rebuild protocol:
 
 ```
 bun run dev
-  ├── context.db exists? → proceed normally
-  └── context.db missing? →
-        "Please wait while we setup the knowledge context.
-         To skip this step, bring your context.db from past work."
-        ├── Scan repo for all // CONTEXT: comments
-        ├── Read core/docs/knowledge/ for all slug directories and aspect files
+  ├── knowledge.db exists? → proceed normally
+  └── knowledge.db missing? →
+        "Please wait while we setup the feature knowledge.
+         To skip this step, bring your knowledge.db from past work."
+        ├── Scan repo for all // SEE: feature comments
+        ├── Read core/docs/knowledge/ for all slug files and aspect sections
         ├── Build slug registry with file/line mappings
-        ├── Index all context() wrapper registrations
-        └── context.db ready → proceed
+        ├── Index all defineFeature*() wrapper registrations
+        └── knowledge.db ready → proceed
 ```
 
-**This eliminates the staleness problem entirely.** If the knowledge feels stale, delete `context.db`. The rebuild scans the current repo state and reconstructs everything from the source of truth files + code annotations. No staleness detection algorithm needed — the nuclear option IS the recovery mechanism.
+**This eliminates the staleness problem entirely.** If the knowledge feels stale, delete `knowledge.db`. The rebuild scans the current repo state and reconstructs everything from the source of truth files + code annotations. No staleness detection algorithm needed — the nuclear option IS the recovery mechanism.
 
 For targeted staleness (a single slug, not everything):
 
 ```
-Agent encounters: // CONTEXT: correctness-as-a-feature - implements /core/patchCorrectness
-Agent looks for /core/patchCorrectness → doesn't exist
-Agent calls: record("correctness-as-a-feature", "stale", "/core/patchCorrectness folder doesn't exist")
+Agent encounters: // SEE: feature "correctness-as-a-feature" at core/docs/knowledge/correctness-as-a-feature.md
+Agent looks for the knowledge file → doesn't exist
+Agent calls: record("correctness-as-a-feature", "stale", "knowledge file doesn't exist")
 
 The record() sub-agent:
-  1. Flags the slug as stale in context.db
-  2. Rescans the repo for all // CONTEXT: correctness-as-a-feature annotations
+  1. Flags the slug as stale in knowledge.db
+  2. Rescans the repo for all // SEE: feature "correctness-as-a-feature" annotations
   3. Checks if the knowledge files still match reality
   4. Updates or marks aspects that reference stale paths
   5. Returns the updated state to the main agent
@@ -364,13 +367,13 @@ This is the only aspect that's always fresh. It's also the slowest (LLM call + f
 
 ---
 
-## The `context()` Runtime Wrapper — Deep Dive
+## The `defineFeature*()` Runtime Wrapper — Deep Dive
 
 ### The Key Insight: Logs Are Contextless Without Slugs
 
 `console.log()` outputs undifferentiated text. When debugging, you scroll through hundreds of lines from dozens of subsystems looking for the one relevant message. This is the same problem as pre-loading ADRs — information without targeting.
 
-`ctx.log()` tags every log entry with its slug. Debugging `rate-limiting`? Query `logs.db` for slug = `rate-limiting` and get ONLY those logs, across server restarts, across HMR reloads.
+`feat.log()` tags every log entry with its slug. Debugging `rate-limiting`? Query `logs.db` for slug = `rate-limiting` and get ONLY those logs, across server restarts, across HMR reloads.
 
 ### Developer Workflow
 
@@ -390,31 +393,29 @@ No grep. No scrolling. No "which log line is this from?" Just slug-targeted sign
 
 ### How File/Line Discovery Works
 
-The `context()` wrapper uses error stack introspection to discover which files and lines are involved:
+The `defineFeature*()` wrapper uses error stack introspection to discover which files and lines are involved:
 
 ```typescript
-function context(slug: string, fn: Function) {
+function defineFeatureHandler(slug: string, handler: Function) {
   // On first call, capture the stack to discover the calling file and line
   const registration = new Error()
   const { file, line } = parseStack(registration.stack)
 
-  // Register this file/line → slug mapping in context.db
-  registerContext(slug, file, line)
+  // Register this file/line → slug mapping in knowledge.db
+  registerFeature(slug, file, line)
 
-  // Return the wrapped function
-  return (...args) => {
-    const ctx = createContextScope(slug)
-    return fn(ctx, ...args)
-  }
+  // Return the wrapped handler
+  const feat = createFeatureScope(slug)
+  return defineEventHandler((event) => handler(feat, event))
 }
 ```
 
-Every time a `context()` wrapper executes for the first time, it registers itself. Combined with `// CONTEXT:` comment scanning, `context.db` builds a complete map of slug → files/lines without manual maintenance.
+Every time a `defineFeature*()` wrapper executes for the first time, it registers itself. Combined with `// SEE:` comment scanning, `knowledge.db` builds a complete map of slug → files/lines without manual maintenance.
 
-### What `ctx` Provides
+### What `feat` Provides
 
 ```typescript
-interface ContextScope {
+interface FeatureScope {
   slug: string
   log: (...args: any[]) => void     // tagged logging → logs.db
   warn: (...args: any[]) => void    // tagged warning → logs.db

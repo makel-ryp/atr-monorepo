@@ -1,6 +1,6 @@
-// CONTEXT: context-oracle — Client-side context wrapper (console.log only, no SQLite)
+// SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 
-interface ContextScope {
+interface FeatureScope {
   slug: string
   log: (message: string, ...data: any[]) => void
   warn: (message: string, ...data: any[]) => void
@@ -8,7 +8,7 @@ interface ContextScope {
   meta: Record<string, any>
 }
 
-function createContextScope(slug: string): ContextScope {
+function createFeatureScope(slug: string): FeatureScope {
   const prefix = `[${slug}]`
 
   return {
@@ -20,13 +20,13 @@ function createContextScope(slug: string): ContextScope {
   }
 }
 
-export function defineContextComposable<
+export function defineFeatureComposable<
   TArgs extends any[],
   TReturn,
 >(
   slug: string,
-  composable: (ctx: ContextScope, ...args: TArgs) => TReturn
+  composable: (feat: FeatureScope, ...args: TArgs) => TReturn
 ): (...args: TArgs) => TReturn {
-  const ctx = createContextScope(slug)
-  return (...args: TArgs) => composable(ctx, ...args)
+  const feat = createFeatureScope(slug)
+  return (...args: TArgs) => composable(feat, ...args)
 }
