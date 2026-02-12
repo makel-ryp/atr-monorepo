@@ -153,7 +153,14 @@
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__list_console_messages",
       "mcp__chrome-devtools__list_network_requests",
-      "mcp__chrome-devtools__get_network_request"
+      "mcp__chrome-devtools__get_network_request",
+      "mcp__app-agent_io__get-page",
+      "mcp__app-agent_io__list-pages",
+      "mcp__app-agent_io__list-apps",
+      "mcp__app-agent_io__census",
+      "mcp__app-agent_io__explain",
+      "mcp__app-agent_io__introspect",
+      "mcp__app-agent_io__log-summary"
     ]
   },
   "enableAllProjectMcpServers": true,
