@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ContentNavigationItem } from '@nuxt/content'
-
 const { seo } = useAppConfig()
+const uiLocale = useUiLocale()
 
 // Merge navigation from all collections (upstream docs + customer docs)
 const { data: navigation } = await useAsyncData('navigation', async () => {
@@ -48,10 +48,7 @@ useHead({
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
-  ],
-  htmlAttrs: {
-    lang: 'en'
-  }
+  ]
 })
 
 useSeoMeta({
@@ -64,7 +61,7 @@ provide('navigation', navigation)
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocale">
     <NuxtLoadingIndicator />
 
     <AppHeader />
