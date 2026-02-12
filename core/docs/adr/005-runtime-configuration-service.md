@@ -1,7 +1,11 @@
 # ADR-005: Runtime Configuration Service
 
 ## Status
-**Proposed**
+**Accepted**
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Revision note (Feb 2026):** Core implementation complete: ConfigProvider abstraction, SupabaseConfigProvider, deepMerge with $meta.lock governance, Settings API (5 routes), Nitro plugin with Supabase Realtime subscription. 43 unit tests passing. Remaining work tracked in GitHub Issues [#4](https://github.com/app-agent-io/core/issues/4), [#7](https://github.com/app-agent-io/core/issues/7), [#8](https://github.com/app-agent-io/core/issues/8), [#9](https://github.com/app-agent-io/core/issues/9), [#12](https://github.com/app-agent-io/core/issues/12).
 
 ## Date
 2026-02-07

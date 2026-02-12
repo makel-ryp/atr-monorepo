@@ -1,7 +1,9 @@
 # ADR-004: Layer Configuration Cascade, i18n, and Cross-Cutting Concerns
 
 ## Status
-**Proposed**
+**Accepted**
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
 
 > **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-layer overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags are tracked as the `feature-flags` knowledge slug (see [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md)).
 
@@ -786,6 +788,8 @@ The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md))
 
 > **Note:** Runtime configuration introspection tools (live settings, per-layer overrides, control plane dashboards) are defined in [ADR-005](./005-runtime-configuration-service.md).
 
+> **Note (Feb 2026):** Deferred -- the original design was dump-everything introspection tools. Tracked as GitHub issue [#13](https://github.com/app-agent-io/core/issues/13) with a query-based redesign approach.
+
 ### New MCP Tools for Configuration
 
 | Tool | Description |
@@ -802,15 +806,15 @@ The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md))
 
 ### 9.1 Feature Flag System
 
-Nuxt 4 has no built-in feature flag system. The existing Nuxt module ecosystem for feature flags targets Nuxt 3 only. The approach is tracked as the `feature-flags` knowledge slug, including building components as toggleable features for A/B testing and production on/off control.
+Implemented -- runtime support via `defineFeature*()` wrappers (ADR-009). Feature flag gating tracked as `feature-flags` knowledge slug.
 
 ### 9.2 Multi-Tenancy via Layer Cascade
 
-The layer cascade provides the **build-time foundation** for multi-tenancy: shared build artifacts, layer-based defaults, and build-time tenant variants via `$env` overrides. Runtime multi-tenancy concerns are defined in [ADR-005](./005-runtime-configuration-service.md).
+Implemented via ADR-005's extensible layer model.
 
 ### 9.3 `$meta.lock` for Build-Time Config Locking
 
-There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues/34270)) to add a `$meta.lock` convention to Nuxt's configuration system. This would allow lower-priority layers to lock specific config paths so that higher-priority layers cannot override them. This aligns with Nuxt's existing `$meta` convention and would give build-time configuration the same governance capability that [ADR-005](./005-runtime-configuration-service.md) provides at runtime.
+Runtime implementation complete in ADR-005's `mergeWithGovernance()`. Upstream Nuxt proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues/34270)) is independent and unrelated to our implementation.
 
 ---
 

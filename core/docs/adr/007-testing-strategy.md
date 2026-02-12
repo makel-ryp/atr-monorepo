@@ -1,14 +1,16 @@
 # ADR-007: Testing Strategy
 
 ## Status
-**Proposed**
+**Accepted**
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
 
 ## Date
 2026-02-09
 
 ## Context
 
-The monorepo has no test infrastructure yet. As we build out the Context Oracle (ADR-006) and platform features, we need a testing strategy that:
+The monorepo has no test infrastructure yet. As we build out the Feature Knowledge (ADR-006) and platform features, we need a testing strategy that:
 
 1. Works with Nuxt 4's auto-import system without conflicts
 2. Handles the layered monorepo architecture (`core/` → `organization/` → `apps/*`)
@@ -66,7 +68,7 @@ vi.stubGlobal('defineNitroPlugin', vi.fn((plugin) => plugin))
 vi.stubGlobal('readBody', vi.fn())
 ```
 
-This is the same pattern we used in the `temp/` prototype tests for `context.ts`. It works because our server handlers are pure functions that Nitro wraps — we test the inner logic, not the Nitro integration.
+This is the same pattern we used in the `temp/` prototype tests for `feature.ts`. It works because our server handlers are pure functions that Nitro wraps — we test the inner logic, not the Nitro integration.
 
 ### Why Not Colocate Tests?
 
@@ -210,7 +212,7 @@ export default [
 ### File Naming
 
 - Test files: `*.test.ts` (not `.spec.ts` — pick one convention)
-- Mirror source paths: `core/server/utils/context.ts` → `core/tests/server/context.test.ts`
+- Mirror source paths: `core/server/utils/feature.ts` → `core/tests/server/feature.test.ts`
 - Setup files: `setup-server.ts`, `setup-nuxt.ts` (not `.test.ts`)
 
 ### What Goes Where — Decision Table
@@ -242,7 +244,7 @@ export default [
 ### Negative
 
 - **Server stubs are manual.** Until [#531](https://github.com/nuxt/test-utils/issues/531) lands, Nitro globals must be stubbed by hand. If Nitro adds new auto-imports, we add new stubs.
-- **Tests are separate from source.** Requires navigating between `server/utils/context.ts` and `tests/server/context.test.ts`. Mitigated by mirroring the directory structure.
+- **Tests are separate from source.** Requires navigating between `server/utils/feature.ts` and `tests/server/feature.test.ts`. Mitigated by mirroring the directory structure.
 - **`nuxt` environment is slow.** Component tests will be slower than unit tests. Keep the `nuxt` test count minimal.
 
 ### Risks

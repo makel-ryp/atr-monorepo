@@ -3,6 +3,8 @@
 ## Status
 **Accepted**
 
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
 ## Date
 2026-02-11
 

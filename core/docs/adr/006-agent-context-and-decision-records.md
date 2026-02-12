@@ -1,7 +1,11 @@
 # ADR-006: Feature Knowledge — Replacing Static Documentation with On-Demand Knowledge
 
 ## Status
-**Draft — Exploratory**
+**Draft — Exploratory** (Infrastructure implemented)
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Revision note (Feb 2026):** Infrastructure implemented: MCP tools (explain, record, introspect, census, log-summary, recent-logs), runtime wrappers (defineFeatureHandler/Plugin/Composable), feature registry with edge tracking, logs.db, knowledge.db, SEE scanner. Remaining work: MCP sampling emulation ([#5](https://github.com/app-agent-io/core/issues/5)), record() sub-agent ([#10](https://github.com/app-agent-io/core/issues/10)), codebase health CLI ([#6](https://github.com/app-agent-io/core/issues/6)).
 
 > **Naming update (ADR-008):** This ADR originally used "context" as the umbrella term (Context Oracle, `// CONTEXT:`, `defineContextHandler`, `ContextScope`). ADR-008 renamed everything to "feature" as the noun (`// SEE: feature`, `defineFeatureHandler`, `FeatureScope`) and dropped the "oracle" branding in favor of "feature knowledge." The rationale: "context" collides with OpenTelemetry, React, and feature flag SDKs; "feature" correctly identifies what slugs represent (units of functionality, including infrastructure). Code examples below use the updated naming.
 
@@ -233,28 +237,47 @@ The sub-agent:
 
 ### Tier 1: Source of Truth (git-tracked, plain text)
 
+> **Implementation note:** The original design below proposed a directory-per-slug model with separate files per aspect. The actual implementation uses **single markdown files per slug** (`core/docs/knowledge/{slug}.md`) with YAML frontmatter and H2 sections for each aspect. This is simpler, produces fewer files, and keeps all knowledge for a slug in one place.
+
 ```
 core/docs/knowledge/
-  layer-cascade/
-    description.md      ← one-liner
-    overview.md         ← 5-15 lines
-    faq.md              ← gotchas and common questions
-    reasoning.md        ← why this decision, what alternatives
-    details.md          ← full technical reference
-    history.md          ← evolution, key moments, user quotes
-  runtime-config/
-    description.md
-    overview.md
-    ...
+  layer-cascade.md      ← single file with frontmatter + H2 sections per aspect
+  runtime-config.md
+  rate-limiting.md
+  ...
+```
+
+Example file structure:
+
+```markdown
+---
+title: Layer Cascade
+description: How configuration, components, and middleware cascade across Nuxt layers
+---
+
+## Overview
+5-15 line summary...
+
+## FAQ
+Common questions and gotchas...
+
+## Reasoning
+Why this decision was made...
+
+## Details
+Full technical deep-dive...
+
+## History
+How this evolved...
 ```
 
 This is what survives if everything else burns down. It's the seed that can rebuild the operational layer from scratch.
 
 **Properties:**
-- Each aspect is a separate file — easy to update one without touching others
+- Each slug is a single file — all aspects in one place, easy to read and update
 - Git-trackable — changes to knowledge are PR-reviewable
-- The directory IS the slug — no mapping table, no database, no indirection
-- Aspects can be added incrementally — start with `description` and `overview`, fill in others as they accumulate
+- The filename IS the slug — no mapping table, no database, no indirection
+- Aspects can be added incrementally — start with frontmatter `description` and `## Overview`, fill in other H2 sections as they accumulate
 - Human-readable on GitHub, in PRs, and as a cold-start fallback for agents without MCP
 - Merge conflicts are rare (aspects change infrequently) and when they happen, they're in plain text — easy to resolve
 

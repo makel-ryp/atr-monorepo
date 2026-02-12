@@ -1,7 +1,11 @@
 # ADR-009: Feature-Oriented Intelligence
 
 ## Status
-**Proposed**
+**Partially Implemented**
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Note (Feb 2026):** Core runtime infrastructure implemented: `defineFeature*()` wrappers, `FeatureScope` with `feature()` and `getFeature()`, feature registry with edge tracking, `// SEE:` scanner, MCP tools (explain, record, introspect, census, log-summary, recent-logs). The self-documentation loop and adaptation protocol described below are aspirational. See [GitHub Issues](https://github.com/app-agent-io/core/issues) for remaining work.
 
 ## Date
 2026-02-11
