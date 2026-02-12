@@ -191,6 +191,7 @@ Read these before making architectural changes (`core/docs/adr/NNN-title.md`):
 
 ## Rules
 
+- NEVER start dev servers (`bun run dev`, `nuxi dev`, etc.). The user always has them running. Ask the user to restart if needed.
 - Challenge architectural decisions and assumptions. Do not default to agreement.
 - If a proposal conflicts with an ADR, established pattern, or known constraint, say so directly.
 - When multiple valid approaches exist, present trade-offs rather than picking the first option.
