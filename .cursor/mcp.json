@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "app-agent.io": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
+    }
+  }
+}

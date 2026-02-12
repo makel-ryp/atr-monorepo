@@ -160,7 +160,9 @@
       "mcp__app-agent_io__census",
       "mcp__app-agent_io__explain",
       "mcp__app-agent_io__introspect",
-      "mcp__app-agent_io__log-summary"
+      "mcp__app-agent_io__log-summary",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__select_page"
     ]
   },
   "enableAllProjectMcpServers": true,
