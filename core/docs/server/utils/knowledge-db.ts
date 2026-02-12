@@ -1,7 +1,24 @@
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
+
+// Local getProjectRoot — docs-layer code loads before core auto-imports resolve
+let _root: string | undefined
+function getProjectRoot(): string {
+  if (_root) return _root
+  let dir = process.cwd()
+  while (dir !== dirname(dir)) {
+    if (existsSync(join(dir, 'turbo.json'))) {
+      _root = dir
+      return dir
+    }
+    dir = dirname(dir)
+  }
+  _root = process.cwd()
+  return _root
+}
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS slugs (
@@ -33,6 +50,23 @@ CREATE TABLE IF NOT EXISTS file_mappings (
   line_end INTEGER,
   UNIQUE(slug, file_path, line_start)
 );
+
+CREATE TABLE IF NOT EXISTS feature_registry (
+  slug TEXT PRIMARY KEY,
+  wrapper_type TEXT NOT NULL DEFAULT 'manual',
+  first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+  last_seen TEXT NOT NULL DEFAULT (datetime('now')),
+  invocation_count INTEGER NOT NULL DEFAULT 0,
+  log_count INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS feature_edges (
+  from_slug TEXT NOT NULL,
+  to_slug TEXT NOT NULL,
+  edge_type TEXT NOT NULL CHECK (edge_type IN ('contains', 'uses')),
+  first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(from_slug, to_slug, edge_type)
+);
 `
 
 export function getKnowledgeDb(): InstanceType<typeof Database> | null {
@@ -40,9 +74,9 @@ export function getKnowledgeDb(): InstanceType<typeof Database> | null {
   if (db !== undefined) return db
 
   try {
-    // cwd is the running app (docs/), knowledge.db lives at project root
-    const dbPath = join(process.cwd(), '..', 'knowledge.db')
+    const dbPath = join(getProjectRoot(), 'knowledge.db')
     db = new Database(dbPath)
+    db.pragma('journal_mode = WAL')
     db.exec(SCHEMA)
     return db
   }

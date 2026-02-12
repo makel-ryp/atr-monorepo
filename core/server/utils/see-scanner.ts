@@ -1,5 +1,5 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
-import { readdir, readFile, stat } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 const SEE_PATTERN = /\/\/\s*SEE:\s*feature\s+"([^"]+)"/g

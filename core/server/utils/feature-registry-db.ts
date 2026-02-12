@@ -1,6 +1,5 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
@@ -23,22 +22,6 @@ CREATE TABLE IF NOT EXISTS feature_edges (
   UNIQUE(from_slug, to_slug, edge_type)
 );
 `
-
-let _root: string | undefined
-
-function getProjectRoot(): string {
-  if (_root) return _root
-  let dir = process.cwd()
-  while (dir !== dirname(dir)) {
-    if (existsSync(join(dir, 'turbo.json'))) {
-      _root = dir
-      return dir
-    }
-    dir = dirname(dir)
-  }
-  _root = process.cwd()
-  return _root
-}
 
 export function getFeatureRegistryDb(): InstanceType<typeof Database> | null {
   if (db !== undefined) return db
@@ -118,15 +101,16 @@ export function syncFileMappings(annotations: FileMappingRecord[]): void {
     const conn = getFeatureRegistryDb()
     if (!conn) return
 
-    const upsert = conn.prepare(`
+    const clear = conn.prepare('DELETE FROM file_mappings')
+    const insert = conn.prepare(`
       INSERT INTO file_mappings (slug, file_path, line_start)
       VALUES (?, ?, ?)
-      ON CONFLICT(slug, file_path, line_start) DO NOTHING
     `)
 
     const transaction = conn.transaction(() => {
+      clear.run()
       for (const a of annotations) {
-        upsert.run(a.slug, a.filePath, a.lineNumber)
+        insert.run(a.slug, a.filePath, a.lineNumber)
       }
     })
 

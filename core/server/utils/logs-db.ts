@@ -1,6 +1,5 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
@@ -20,22 +19,6 @@ CREATE TABLE IF NOT EXISTS logs (
 CREATE INDEX IF NOT EXISTS idx_logs_slug ON logs(slug);
 CREATE INDEX IF NOT EXISTS idx_logs_slug_timestamp ON logs(slug, timestamp DESC);
 `
-
-let _root: string | undefined
-
-function getProjectRoot(): string {
-  if (_root) return _root
-  let dir = process.cwd()
-  while (dir !== dirname(dir)) {
-    if (existsSync(join(dir, 'turbo.json'))) {
-      _root = dir
-      return dir
-    }
-    dir = dirname(dir)
-  }
-  _root = process.cwd()
-  return _root
-}
 
 export function getLogsDb(): InstanceType<typeof Database> | null {
   // undefined = not yet initialized, null = failed to initialize

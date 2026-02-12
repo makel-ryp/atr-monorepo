@@ -71,6 +71,7 @@ export function createFeatureScope(slug: string): FeatureScope {
 
     feature<T>(childSlug: string, fn: (feat: FeatureScope) => T): T {
       if (import.meta.dev) {
+        registerFeature(childSlug, 'nested')
         recordEdge(slug, childSlug, 'contains')
       }
       const childScope = createFeatureScope(childSlug)
@@ -79,6 +80,7 @@ export function createFeatureScope(slug: string): FeatureScope {
 
     getFeature(otherSlug: string): FeatureScope {
       if (import.meta.dev) {
+        registerFeature(otherSlug, 'dependency')
         recordEdge(slug, otherSlug, 'uses')
       }
       let cached = featureCache.get(otherSlug)

@@ -1,7 +1,5 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
 import { z } from 'zod'
-import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
 
 export default defineMcpTool({
   description: `Returns a feature coverage report for the codebase.

@@ -5,7 +5,8 @@
 // Uses remark AST for reliable section extraction and splicing.
 
 import { readdir, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkStringify from 'remark-stringify'
@@ -36,9 +37,24 @@ const HEADING_TO_ASPECT: Record<string, string> = Object.fromEntries(
   Object.entries(ASPECT_HEADINGS).map(([aspect, heading]) => [heading.toLowerCase(), aspect]),
 )
 
+// Local getProjectRoot — docs-layer code loads before core auto-imports resolve
+let _root: string | undefined
+function getProjectRoot(): string {
+  if (_root) return _root
+  let dir = process.cwd()
+  while (dir !== dirname(dir)) {
+    if (existsSync(join(dir, 'turbo.json'))) {
+      _root = dir
+      return dir
+    }
+    dir = dirname(dir)
+  }
+  _root = process.cwd()
+  return _root
+}
+
 export function getKnowledgeDir(): string {
-  // cwd is the running app (docs/), knowledge lives in core/docs/knowledge/
-  return join(process.cwd(), '..', 'core', 'docs', 'knowledge')
+  return join(getProjectRoot(), 'core', 'docs', 'knowledge')
 }
 
 function getKnowledgePath(slug: string): string {

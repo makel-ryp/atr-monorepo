@@ -239,7 +239,7 @@ describe('getProjectRoot logic', () => {
   test('algorithm caches result (tested via code review — singleton _root variable)', () => {
     const fs = require('node:fs')
     const source = fs.readFileSync(
-      require('node:path').join(process.cwd(), 'core/server/utils/logs-db.ts'), 'utf8'
+      require('node:path').join(process.cwd(), 'core/server/utils/project-root.ts'), 'utf8'
     )
     expect(source).toContain('let _root')
     expect(source).toContain('if (_root) return _root')

@@ -98,6 +98,27 @@ export default defineFeatureHandler('rate-limiting', async (feat, event) => {
 Variants: `defineFeatureHandler`, `defineFeatureComposable`, `defineFeaturePlugin`.
 Production behavior: pass-through (single boolean check, zero overhead).
 
+### Feature Nesting and Dependencies
+
+Inside any `defineFeature*()` wrapper, use `feat.feature()` for containment and
+`feat.getFeature()` for cross-feature dependencies:
+
+```typescript
+export default defineFeatureHandler('rate-limiting', async (feat, event) => {
+  // Nest a sub-feature (containment edge)
+  feat.feature('ip-throttle', (child) => {
+    child.log('checking ip', event.path)
+  })
+
+  // Access another feature's scope (dependency edge)
+  const auth = feat.getFeature('authentication')
+  auth.log('verifying token')
+})
+```
+
+`feature()` creates a fresh scope each call. `getFeature()` caches per parent scope
+(meta accumulates across calls). Both record edges in the dev-mode feature registry.
+
 ### i18n Namespace Convention
 
 Translation keys are namespaced by layer to prevent collisions:

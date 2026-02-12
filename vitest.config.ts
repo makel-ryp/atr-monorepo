@@ -20,6 +20,17 @@ export default defineConfig({
           setupFiles: ['tests/setup-server.ts'],
         },
       },
+      {
+        test: {
+          name: 'core:dev',
+          root: 'core',
+          include: ['tests/dev/**/*.test.ts'],
+          environment: 'node',
+        },
+        define: {
+          'import.meta.dev': true,
+        },
+      },
     ],
     coverage: {
       provider: 'v8',
