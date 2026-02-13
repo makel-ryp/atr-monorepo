@@ -12,6 +12,17 @@ const hasProvider = computed(() => models.value.length > 0)
 
 const input = ref('')
 
+const {
+  dropzoneRef,
+  isDragging,
+  files,
+  isReading,
+  readyFiles,
+  addFiles,
+  removeFile,
+  clearFiles
+} = useFileUploadLocal()
+
 const chat = new Chat({
   transport: new DefaultChatTransport({
     api: '/api/control/agent/chat',
@@ -32,9 +43,13 @@ const chat = new Chat({
 
 async function handleSubmit(e: Event) {
   e.preventDefault()
-  if (input.value.trim()) {
-    chat.sendMessage({ text: input.value })
+  if (input.value.trim() && !isReading.value) {
+    chat.sendMessage({
+      text: input.value,
+      files: readyFiles.value.length > 0 ? readyFiles.value : undefined
+    })
     input.value = ''
+    clearFiles()
   }
 }
 
@@ -44,6 +59,22 @@ function copy(_e: MouseEvent, message: UIMessage) {
   clipboard.copy(getTextFromMessage(message))
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
+}
+
+function getFileName(url: string): string {
+  try {
+    if (url.startsWith('data:')) {
+      const mimeType = url.split(';')[0]?.split(':')[1] || 'file'
+      const ext = mimeType.split('/')[1] || 'bin'
+      return `file.${ext}`
+    }
+    const urlObj = new URL(url)
+    const filename = urlObj.pathname.split('/').pop() || 'file'
+    return decodeURIComponent(filename)
+  }
+  catch {
+    return 'file'
+  }
 }
 </script>
 
@@ -61,75 +92,103 @@ function copy(_e: MouseEvent, message: UIMessage) {
           Set <code>AI_PROVIDER_URL</code>, <code>AI_PROVIDER_KEY</code>, and <code>AI_PROVIDER_MODEL</code> env vars to enable the agent.
         </p>
       </div>
-      <UContainer v-else class="flex-1 flex flex-col gap-4 sm:gap-6">
-        <UChatMessages
-          should-auto-scroll
-          :messages="chat.messages"
-          :status="chat.status"
-          :assistant="chat.status !== 'streaming' ? { actions: [{ label: 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] } : { actions: [] }"
-          :spacing-offset="160"
-          class="lg:pt-(--ui-header-height) pb-4 sm:pb-6"
-        >
-          <template #content="{ message }">
-            <template v-for="(part, index) in message.parts" :key="`${message.id}-${part.type}-${index}`">
-              <MDCCached
-                v-if="part.type === 'text' && message.role === 'assistant'"
-                :value="part.text"
-                :cache-key="`${message.id}-${index}`"
-                :parser-options="{ highlight: false }"
-                class="*:first:mt-0 *:last:mb-0"
-              />
-              <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
-                {{ part.text }}
-              </p>
-              <div v-else-if="isToolUIPart(part)" class="my-2 rounded-lg border border-default bg-muted/50 overflow-hidden">
-                <div class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted">
-                  <UIcon
-                    :name="part.state === 'output-available' ? 'i-lucide-check-circle' : part.state === 'output-error' ? 'i-lucide-alert-circle' : 'i-lucide-loader-circle'"
-                    :class="[
-                      'size-4',
-                      part.state === 'output-available' && 'text-success',
-                      part.state === 'output-error' && 'text-error',
-                      (part.state === 'input-streaming' || part.state === 'input-available') && 'animate-spin'
-                    ]"
-                  />
-                  <span>{{ part.type.replace('tool-', '') }}</span>
-                  <span v-if="part.input && Object.keys(part.input).length" class="text-dimmed">
-                    ({{ Object.entries(part.input).filter(([, v]) => v != null).map(([k, v]) => `${k}: ${v}`).join(', ') }})
-                  </span>
-                </div>
-                <pre v-if="part.state === 'output-available' && part.output" class="px-3 py-2 text-xs overflow-x-auto border-t border-default max-h-64 overflow-y-auto">{{ JSON.stringify(part.output, null, 2) }}</pre>
-                <p v-else-if="part.state === 'output-error'" class="px-3 py-2 text-xs text-error border-t border-default">
-                  {{ part.errorText || 'Tool execution failed' }}
+      <template v-else>
+        <DragDropOverlay :show="isDragging" />
+        <UContainer ref="dropzoneRef" class="flex-1 flex flex-col gap-4 sm:gap-6">
+          <UChatMessages
+            should-auto-scroll
+            :messages="chat.messages"
+            :status="chat.status"
+            :assistant="chat.status !== 'streaming' ? { actions: [{ label: 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] } : { actions: [] }"
+            :spacing-offset="160"
+            class="lg:pt-(--ui-header-height) pb-4 sm:pb-6"
+          >
+            <template #content="{ message }">
+              <template v-for="(part, index) in message.parts" :key="`${message.id}-${part.type}-${index}${'state' in part ? `-${part.state}` : ''}`">
+                <MDCCached
+                  v-if="part.type === 'text' && message.role === 'assistant'"
+                  :value="part.text"
+                  :cache-key="`${message.id}-${index}`"
+                  :parser-options="{ highlight: false }"
+                  class="*:first:mt-0 *:last:mb-0"
+                />
+                <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
+                  {{ part.text }}
                 </p>
+                <div v-else-if="isToolUIPart(part)" class="my-2 rounded-lg border border-default bg-muted/50 overflow-hidden">
+                  <div class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted">
+                    <UIcon
+                      :name="part.state === 'output-available' ? 'i-lucide-check-circle' : part.state === 'output-error' ? 'i-lucide-alert-circle' : 'i-lucide-loader-circle'"
+                      :class="[
+                        'size-4',
+                        part.state === 'output-available' && 'text-success',
+                        part.state === 'output-error' && 'text-error',
+                        (part.state === 'input-streaming' || part.state === 'input-available') && 'animate-spin'
+                      ]"
+                    />
+                    <span>{{ part.type.replace('tool-', '') }}</span>
+                    <span v-if="part.input && Object.keys(part.input).length" class="text-dimmed">
+                      ({{ Object.entries(part.input).filter(([, v]) => v != null).map(([k, v]) => `${k}: ${v}`).join(', ') }})
+                    </span>
+                  </div>
+                  <pre v-if="part.state === 'output-available' && part.output" class="px-3 py-2 text-xs overflow-x-auto border-t border-default max-h-64 overflow-y-auto">{{ JSON.stringify(part.output, null, 2) }}</pre>
+                  <p v-else-if="part.state === 'output-error'" class="px-3 py-2 text-xs text-error border-t border-default">
+                    {{ part.errorText || 'Tool execution failed' }}
+                  </p>
+                </div>
+                <FileAvatar
+                  v-else-if="part.type === 'file'"
+                  :name="getFileName(part.url)"
+                  :type="part.mediaType"
+                  :preview-url="part.url"
+                />
+              </template>
+            </template>
+          </UChatMessages>
+
+          <UChatPrompt
+            v-model="input"
+            :error="chat.error"
+            :disabled="isReading"
+            variant="subtle"
+            class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
+            :ui="{ base: 'px-1.5' }"
+            @submit="handleSubmit"
+          >
+            <template v-if="files.length > 0" #header>
+              <div class="flex flex-wrap gap-2">
+                <FileAvatar
+                  v-for="fileWithStatus in files"
+                  :key="fileWithStatus.id"
+                  :name="fileWithStatus.file.name"
+                  :type="fileWithStatus.file.type"
+                  :preview-url="fileWithStatus.previewUrl"
+                  :status="fileWithStatus.status"
+                  :error="fileWithStatus.error"
+                  removable
+                  @remove="removeFile(fileWithStatus.id)"
+                />
               </div>
             </template>
-          </template>
-        </UChatMessages>
 
-        <UChatPrompt
-          v-model="input"
-          :error="chat.error"
-          variant="subtle"
-          class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10"
-          :ui="{ base: 'px-1.5' }"
-          @submit="handleSubmit"
-        >
-          <template #footer>
-            <div class="flex items-center gap-1">
-              <ModelSelect />
-            </div>
+            <template #footer>
+              <div class="flex items-center gap-1">
+                <FileUploadButton @files-selected="addFiles($event)" />
+                <ModelSelect />
+              </div>
 
-            <UChatPromptSubmit
-              :status="chat.status"
-              color="neutral"
-              size="sm"
-              @stop="chat.stop()"
-              @reload="chat.regenerate()"
-            />
-          </template>
-        </UChatPrompt>
-      </UContainer>
+              <UChatPromptSubmit
+                :status="chat.status"
+                :disabled="isReading"
+                color="neutral"
+                size="sm"
+                @stop="chat.stop()"
+                @reload="chat.regenerate()"
+              />
+            </template>
+          </UChatPrompt>
+        </UContainer>
+      </template>
     </template>
   </UDashboardPanel>
 </template>

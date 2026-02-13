@@ -26,6 +26,11 @@ const primaryItems: NavigationMenuItem[] = [{
   to: '/settings',
   onSelect: () => { open.value = false }
 }, {
+  label: 'Translations',
+  icon: 'i-lucide-languages',
+  to: '/i18n',
+  onSelect: () => { open.value = false }
+}, {
   label: 'Agent',
   icon: 'i-lucide-bot',
   to: '/agent',

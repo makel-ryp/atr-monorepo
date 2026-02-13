@@ -8,6 +8,7 @@ const _useControlPlane = () => {
     'g-f': () => router.push('/features'),
     'g-l': () => router.push('/logs'),
     'g-s': () => router.push('/settings'),
+    'g-i': () => router.push('/i18n'),
     'g-a': () => router.push('/agent')
   })
 
