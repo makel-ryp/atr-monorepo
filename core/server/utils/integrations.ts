@@ -57,7 +57,9 @@ export function createModelForId(modelId: string, profileName?: string) {
     apiKey: profile.key,
   })
 
-  return provider(modelId)
+  // Use .chat() explicitly — provider() defaults to OpenAI Responses API in v3,
+  // which OpenRouter and other OpenAI-compatible proxies don't support.
+  return provider.chat(modelId)
 }
 
 export function createModel(profileName?: string) {
