@@ -50,3 +50,8 @@ coverage/
 # Feature knowledge operational databases (rebuildable from source of truth)
 knowledge.db
 logs.db
+
+# Local config service database (SQLite fallback — rebuildable)
+settings.db
+settings.db-wal
+settings.db-shm
