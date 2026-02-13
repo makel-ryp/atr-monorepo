@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { model, models, formatModelName } = useModels()
 
-const items = computed(() => models.map(model => ({
+const items = computed(() => models.value.map(model => ({
   label: formatModelName(model),
   value: model,
   icon: `i-simple-icons-${model.split('/')[0]}`

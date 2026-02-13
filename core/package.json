@@ -9,6 +9,8 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.3.22",
+    "ai": "^6.0.50",
     "@nuxtjs/i18n": "^9.5.0",
     "@supabase/supabase-js": "^2",
     "better-sqlite3": "^12.6.2",

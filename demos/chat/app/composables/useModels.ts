@@ -14,17 +14,22 @@ export function formatModelName(modelId: string): string {
 }
 
 export function useModels() {
-  const models = [
-    'openai/gpt-5-nano',
-    'anthropic/claude-haiku-4.5',
-    'google/gemini-2.5-flash'
-  ]
+  const { data: models } = useFetch<string[]>('/api/integrations/models', {
+    default: () => [],
+  })
 
-  const model = useCookie<string>('model', { default: () => 'openai/gpt-5-nano' })
+  const model = useCookie<string>('model', { default: () => '' })
+
+  // Reset cookie if it's not in the available model list
+  watch(models, (available) => {
+    if (available.length && (!model.value || !available.includes(model.value))) {
+      model.value = available[0]
+    }
+  }, { immediate: true })
 
   return {
     models,
     model,
-    formatModelName
+    formatModelName,
   }
 }
