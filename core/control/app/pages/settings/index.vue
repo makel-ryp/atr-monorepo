@@ -73,6 +73,7 @@ const configEntries = computed(() => {
     <template #header>
       <UDashboardNavbar title="Settings">
         <template #right>
+          <UButton to="/settings/diff" icon="i-lucide-diff" variant="ghost" color="neutral" size="sm" label="Diff" />
           <UButton icon="i-lucide-refresh-cw" variant="ghost" color="neutral" size="sm" @click="refreshAll()" />
         </template>
       </UDashboardNavbar>
