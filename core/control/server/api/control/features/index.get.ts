@@ -54,6 +54,11 @@ export default defineEventHandler(() => {
     total: features.length,
     totalEdges: edges.length,
     totalFiles: mappings.length,
-    features
+    features,
+    edges: edges.map(e => ({
+      from: e.from_slug,
+      to: e.to_slug,
+      type: e.edge_type
+    }))
   }
 })

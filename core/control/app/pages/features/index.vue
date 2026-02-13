@@ -39,6 +39,14 @@ const columns = [
           <span><strong>{{ data.totalFiles }}</strong> file mappings</span>
         </div>
 
+        <!-- Dependency Graph -->
+        <UCard v-if="data.edges?.length">
+          <template #header>
+            <span class="font-semibold">Dependency Graph</span>
+          </template>
+          <FeatureGraph :features="data.features" :edges="data.edges" />
+        </UCard>
+
         <!-- Search -->
         <UInput v-model="search" icon="i-lucide-search" placeholder="Filter features..." class="max-w-sm" />
 

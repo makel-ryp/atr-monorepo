@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 
@@ -44,7 +44,8 @@ export default defineEventHandler(async (event) => {
     logs,
     knowledge: {
       exists: hasKnowledge,
-      path: hasKnowledge ? `core/docs/knowledge/${slug}.md` : null
+      path: hasKnowledge ? `core/docs/knowledge/${slug}.md` : null,
+      content: hasKnowledge ? readFileSync(knowledgePath, 'utf-8') : null
     }
   }
 })

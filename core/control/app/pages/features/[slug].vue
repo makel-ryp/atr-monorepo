@@ -133,15 +133,27 @@ function formatTimestamp(ts: string): string {
         <!-- Knowledge -->
         <UCard>
           <template #header>
-            <span class="font-semibold">Knowledge</span>
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">Knowledge</span>
+              <div class="flex items-center gap-2">
+                <UBadge :color="data.knowledge.exists ? 'success' : 'warning'" variant="subtle" size="sm">
+                  {{ data.knowledge.exists ? 'Documented' : 'Missing' }}
+                </UBadge>
+                <span v-if="data.knowledge.path" class="text-xs text-muted font-mono">{{ data.knowledge.path }}</span>
+              </div>
+            </div>
           </template>
 
-          <div class="flex items-center gap-2">
-            <UBadge :color="data.knowledge.exists ? 'success' : 'warning'" variant="subtle">
-              {{ data.knowledge.exists ? 'Documented' : 'Missing' }}
-            </UBadge>
-            <span v-if="data.knowledge.path" class="text-sm text-muted">{{ data.knowledge.path }}</span>
+          <div v-if="data.knowledge.content" class="prose prose-sm max-w-none dark:prose-invert">
+            <MDCCached
+              :value="data.knowledge.content"
+              :cache-key="`knowledge-${slug}`"
+              :parser-options="{ highlight: false }"
+            />
           </div>
+          <p v-else class="text-sm text-muted">
+            No knowledge file found. Create <code>core/docs/knowledge/{{ slug }}.md</code> to document this feature.
+          </p>
         </UCard>
 
         <!-- Recent Logs -->
