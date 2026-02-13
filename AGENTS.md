@@ -181,6 +181,41 @@ Hot-reloadable settings with `$meta.lock` governance. Provider-agnostic (Postgre
   - `CORE_DATASOURCE_PROVIDER` — which provider to load (default: `supabase`)
   - `CORE_ENVIRONMENT` — environment identifier (falls back to `NODE_ENV`)
 
+## Authentication
+
+<!-- SEE: feature "authentication" at core/docs/knowledge/authentication.md -->
+
+Opt-in auth using `nuxt-auth-utils` with 3-role RBAC (public/registered/admin).
+
+- **Core provides** types, server utils, middleware, composable, and `CoreUserMenu` component
+- **Apps opt in** by adding `nuxt-auth-utils` to their `modules` array
+- **User table:** `app_agent_users` (namespaced to avoid collision with client backends)
+- **Two modes:** session-only (cookie, no DB) or database-backed (lookup-or-create via `DbAdapter`)
+
+### Server guards (auto-imported)
+
+```typescript
+const user = await requireAuth(event)        // 401 if not logged in
+const admin = await requireRole(event, 'admin') // 403 if not admin
+const user = await getAuthUser(event)         // null if not logged in
+```
+
+### Client composable
+
+```typescript
+const { loggedIn, user, role, isAdmin, login, logout } = useAuth()
+login('github')  // OAuth popup
+```
+
+### OAuth route pattern
+
+Each app defines `server/routes/auth/[provider].get.ts` with a handlers map dispatching to `handleOAuthSuccess()`.
+
+### Env vars
+
+- `NUXT_SESSION_PASSWORD` — session encryption (auto-generated in dev)
+- `NUXT_OAUTH_<PROVIDER>_CLIENT_ID` / `CLIENT_SECRET` — per-provider OAuth credentials
+
 ## Feature Knowledge (MCP) — In Progress
 
 The `/docs` app exposes MCP tools for on-demand feature knowledge:

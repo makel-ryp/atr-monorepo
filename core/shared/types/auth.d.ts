@@ -1,4 +1,4 @@
-// auth.d.ts
+// SEE: feature "authentication" at core/docs/knowledge/authentication.md
 declare module '#auth-utils' {
   interface User {
     id: string
@@ -6,8 +6,9 @@ declare module '#auth-utils' {
     email: string
     avatar: string
     username: string
-    provider: 'github'
+    provider: string
     providerId: string
+    role: 'public' | 'registered' | 'admin'
   }
 }
 

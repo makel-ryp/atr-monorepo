@@ -6,7 +6,9 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@vueuse/nuxt'
+    '@nuxthub/core',
+    '@vueuse/nuxt',
+    'nuxt-auth-utils'
   ],
 
   devtools: {
@@ -50,6 +52,11 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Dashboard demo - internal tools, admin panels, analytics' }
       ]
     }
+  },
+
+  // NuxtHub configuration for database
+  hub: {
+    db: 'sqlite'
   },
 
   // Nitro server configuration

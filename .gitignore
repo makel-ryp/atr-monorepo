@@ -56,8 +56,14 @@ settings.db
 settings.db-wal
 settings.db-shm
 
+# NuxtHub local data
+.data/
+
 # Secrets - Handled by multi-encrypt
 # Files below are encrypted into encrypted.json (committed to repo).
 # After adding a new secret file: bun run enc
 ./.env
 ./demos/chat/.env
+./demos/dashboard/.env
+./demos/landing/.env
+demos/dashboard/.data

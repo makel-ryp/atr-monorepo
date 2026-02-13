@@ -4,7 +4,7 @@ import { LazyModalConfirm } from '#components'
 const route = useRoute()
 const toast = useToast()
 const overlay = useOverlay()
-const { loggedIn, openInPopup } = useUserSession()
+const { loggedIn } = useAuth()
 
 const open = ref(false)
 
@@ -145,16 +145,7 @@ defineShortcuts({
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu v-if="loggedIn" :collapsed="collapsed" />
-        <UButton
-          v-else
-          :label="collapsed ? '' : 'Login with GitHub'"
-          icon="i-simple-icons-github"
-          color="neutral"
-          variant="ghost"
-          class="w-full"
-          @click="openInPopup('/auth/github')"
-        />
+        <CoreUserMenu :collapsed="collapsed" />
       </template>
     </UDashboardSidebar>
 
