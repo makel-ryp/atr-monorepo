@@ -62,7 +62,7 @@ export function useFileUploadWithStatus(chatId: string) {
         files.value[index] = {
           ...files.value[index]!,
           status: 'uploaded',
-          uploadedUrl: result.url,
+          uploadedUrl: result.url || `/api/upload/${result.pathname}`,
           uploadedPathname: result.pathname
         }
       } catch (error) {
