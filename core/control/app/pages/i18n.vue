@@ -26,13 +26,13 @@ const filteredKeys = computed(() => {
 })
 
 const columns = computed(() => {
-  const cols = [
-    { key: 'key', label: 'Key', sortable: true },
-    { key: 'layer', label: 'Layer', sortable: true }
+  const cols: { accessorKey: string, header: string }[] = [
+    { accessorKey: 'key', header: 'Key' },
+    { accessorKey: 'layer', header: 'Layer' }
   ]
   if (data.value) {
     for (const locale of data.value.locales) {
-      cols.push({ key: locale, label: locale.toUpperCase(), sortable: false })
+      cols.push({ accessorKey: locale, header: locale.toUpperCase() })
     }
   }
   return cols
@@ -64,9 +64,11 @@ const layerOptions = computed(() => [
           icon="i-lucide-search"
           class="flex-1 max-w-sm"
         />
-        <USelect
+        <USelectMenu
           v-model="selectedLayer"
           :items="layerOptions"
+          value-key="value"
+          placeholder="Layer"
           class="w-40"
         />
         <UBadge variant="subtle" size="sm" class="ml-auto">
