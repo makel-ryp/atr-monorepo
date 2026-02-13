@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
+const uiLocale = useUiLocale()
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
 
@@ -11,10 +12,7 @@ useHead({
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
-  ],
-  htmlAttrs: {
-    lang: 'en'
-  }
+  ]
 })
 
 const title = 'Nuxt AI Chatbot template'
@@ -32,7 +30,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp :toaster="{ position: 'top-right' }" :tooltip="{ delayDuration: 200 }">
+  <UApp :locale="uiLocale" :toaster="{ position: 'top-right' }" :tooltip="{ delayDuration: 200 }">
     <NuxtLoadingIndicator color="var(--ui-primary)" />
 
     <NuxtLayout>

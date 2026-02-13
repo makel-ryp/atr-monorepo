@@ -19,7 +19,8 @@ yarn-error.log*
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 *.swp
 *.swo
 
@@ -42,3 +43,10 @@ packages/*/bun.lock
 .vercel/
 
 demos/chat/.data
+
+# Test coverage
+coverage/
+
+# Feature knowledge operational databases (rebuildable from source of truth)
+knowledge.db
+logs.db

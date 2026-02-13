@@ -1,10 +1,16 @@
 # ADR-005: Runtime Configuration Service
 
 ## Status
-**Proposed**
+**Accepted**
+
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Revision note (Feb 2026):** Core implementation complete: ConfigProvider abstraction, SupabaseConfigProvider, deepMerge with $meta.lock governance, Settings API (5 routes), Nitro plugin with Supabase Realtime subscription. 43 unit tests passing. Remaining work tracked in GitHub Issues [#4](https://github.com/app-agent-io/core/issues/4), [#7](https://github.com/app-agent-io/core/issues/7), [#8](https://github.com/app-agent-io/core/issues/8), [#9](https://github.com/app-agent-io/core/issues/9), [#12](https://github.com/app-agent-io/core/issues/12).
 
 ## Date
 2026-02-07
+
+> **Revision note (2026-02-10):** Three updates: (1) The fixed three-tier model (platform/org/user) is now an extensible layer model — apps define their own merge chain via `$meta.layers`, with `layer_name` as a freeform identifier (e.g., `domain`, `group`, `team`, `geo`). (2) Node-level caching is now JWT-keyed (opaque string as Map key), replacing the user-ID-keyed LRU cache. (3) The `user_sessions` table has been dropped — session tracking is handled by the JWT cache.
 
 ## Context
 
@@ -57,8 +63,8 @@ Build Time (Nuxt — ADR-004):
   Produces a frozen build artifact.
 
 Runtime (Settings Service — this ADR):
-  platform defaults → org overrides → user preferences
-  merge-change merges config. $meta.lock governs immutability.
+  platform defaults → org overrides → [...app-defined] → user preferences
+  deepMerge merges config. $meta.lock governs immutability.
   Control plane writes to database.
   PG NOTIFY propagates to all nodes.
   Lives in server/ as a Nitro service.
@@ -78,40 +84,40 @@ These two systems do not interact. Nuxt layers solve **which code runs**. The ru
 | **Organization overrides** | Org-wide settings managed via control plane | PostgreSQL | Admins |
 | **User preferences** | Per-user settings (theme, language, density, etc.) | PostgreSQL + node-level K/V cache | End users |
 
-Three tiers. Platform → Organization → User. Merged in that order. Higher tiers override lower tiers (unless locked).
+The three-tier model remains the conceptual default, but the implementation is extensible. Apps define their own merge chain via `$meta.layers` in their `core:app` config row, using `layer_name` as a freeform identifier (e.g., `domain`, `group`, `team`, `geo`). The core layers (`core`, `core:org`) always run first with `app_id='*'`, and `user` is always last.
 
 ### Explicitly Deferred
 
 | Capability | Future Scope | Rationale |
 |------------|-------------|-----------|
-| **Group layers** (sub-orgs, roles, domain groups) | Future ADR: "Group Service" | Requires group membership model, reverse index for cache invalidation |
-| **Contextual layers** (time of day, geolocation, device type) | Future ADR: "Context Service" | Per-request variability breaks simple caching; needs its own evaluation engine |
-| **Feature flags** (A/B testing, rollouts, kill switches) | [ADR-006](./006-feature-flag-system.md) | Nuxt 4 has no feature flag system (only Nuxt 3 modules exist). Components will be built as toggleable features. Deserves its own ADR. |
-| **Reverse index** (layer → affected users mapping) | Ships with Group Service | Only needed when shared group layers exist; org-level changes use broadcast |
+| **Group layers** (sub-orgs, roles, domain groups) | Handled by extensible layer model | Apps define group layers in their merge chain — `layer_name` is freeform. No separate ADR needed. |
+| **Contextual layers** (time of day, geolocation, device type) | Resolved at login time | Per-request context (geo, device) can be resolved at login and baked into the JWT cache entry. No runtime evaluation engine needed. |
+| **Feature flags** (A/B testing, rollouts, kill switches) | [ADR-006](./006-agent-context-and-decision-records.md) | Nuxt 4 has no feature flag system (only Nuxt 3 modules exist). Components will be built as toggleable features. Deserves its own ADR. |
 | **SchemaPack binary diffs** | Future ADR: "Wire Optimization" | Optimization for high-frequency changes; JSON is sufficient for v1 |
 
-### Why Three Tiers Is Sufficient
+### Why the Extensible Model Works
 
-With only platform, org, and user, the invalidation model is simple:
+The invalidation model scales with the extensible layer model:
 
 - **Platform changes** require redeployment (they're in code). No runtime invalidation needed.
-- **Org changes** broadcast to all nodes via PG NOTIFY. Every node updates its org config. No need to figure out which users are affected — every connected user gets the same org config.
-- **User changes** target a single user on a single node. The control plane knows which node the user is connected to and pushes directly.
+- **Shared layer changes** (org, group, domain, etc.) scan the in-memory JWT cache for entries whose `layerIds[]` contain the changed layer, then evict those entries. Affected requests rebuild lazily on next cache miss.
+- **User-specific changes** evict the corresponding JWT cache entry directly.
+- **No reverse index needed** — the JWT cache entries contain `layerIds[]`, which are scanned on invalidation. With typical cache sizes (thousands of entries), a linear scan is sub-millisecond.
 
 ---
 
-## Part 2: The Merge Engine — merge-change
+## Part 2: The Merge Engine — deepMerge
 
-The runtime config merger uses [merge-change](https://github.com/nickelshoe/merge-change) instead of defu:
+The runtime config merger uses a custom `deepMerge` implementation (see `core/server/utils/config-service/merge.ts`) with `$meta.lock` governance:
 
-| Requirement | defu | merge-change |
-|-------------|------|--------------|
-| Deep path operations (`auth.provider.oauth.clientId`) | No path context in callback | Native `$set` with dot-path syntax |
-| Diff tracking (audit log) | Not available | `diff(before, after)` built-in |
-| Array handling control | Always concatenates | Configurable per-type via `addMerge()` |
-| TypeScript path extraction | Not available | `ExtractPaths<Config>` utility type |
+| Requirement | defu | deepMerge (this system) |
+|-------------|------|------------------------|
+| Deep merge with lock governance | No lock concept | `mergeWithGovernance()` — locks accumulate, stripped from output |
+| Config diff computation | Not available | `computeConfigDiff(before, after)` |
+| Path-level operations | Via separate utils | `getNestedValue`, `setNestedValue`, `deleteNestedValue` |
+| Flatten/unflatten | Not available | `flattenConfig`, `unflattenConfig` |
 
-**defu remains the merger for Nuxt's build-time layer system** (ADR-004). merge-change is used exclusively for runtime configuration. Different systems, different merge engines.
+**defu remains the merger for Nuxt's build-time layer system** (ADR-004). deepMerge is used exclusively for runtime configuration. Different systems, different merge engines.
 
 ---
 
@@ -307,29 +313,43 @@ CREATE TABLE config_history (
 );
 ```
 
-### `user_sessions` Table
+### Session Tracking
 
-```sql
-CREATE TABLE user_sessions (
-  user_id       TEXT NOT NULL,
-  node_id       TEXT NOT NULL,
-  connected_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  last_seen     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, node_id)
-);
-```
+> **Note:** The `user_sessions` table originally proposed here has been dropped. Session tracking is handled by the JWT-keyed in-memory cache (see Part 6). No database table is needed for session state.
 
 ### Triggers
 
-PG NOTIFY triggers fire on org config changes (broadcasting to all nodes) and user settings changes (targeted to nodes with that user cached). Schema validation via `pg_jsonschema` ensures all writes conform to expected structure. Audit triggers record every change to `config_history` with before/after snapshots.
+PG NOTIFY triggers fire on layer config changes, broadcasting to all nodes. Each node scans its JWT cache for entries containing the changed layer ID in their `layerIds[]` and evicts them. Schema validation via `pg_jsonschema` ensures all writes conform to expected structure. Audit triggers record every change to `config_history` with before/after snapshots.
 
 ---
 
-## Part 6: Node-Level Caching
+## Part 6: Node-Level Caching — JWT-Keyed
 
-Each node holds the org config blob in memory (`ConfigStore`), loaded on boot and updated when PG NOTIFY fires. Per-user merged config is cached in a `UserCache` (LRU, keyed by user ID not JWT). On the hot path, a cache hit is sub-millisecond. A miss triggers a single PostgreSQL query + merge.
+Each node maintains an in-memory cache keyed by JWT string (opaque, not decoded):
 
-When org config changes, `remergeAll()` re-merges every cached user in-memory using the new org config — no per-user DB queries needed.
+```typescript
+interface CacheEntry {
+  layerIds: string[]   // IDs of all layers that contributed to this merge result
+  config: MergeResult  // The effective merged config
+}
+
+// Map<jwt_string, CacheEntry>
+const cache = new Map<string, CacheEntry>()
+```
+
+### Cache Operations
+
+- **Request time:** `cache.get(jwt)` — a simple Map lookup, no JWT decode needed. Sub-millisecond.
+- **Cache miss:** Validate JWT, app provides merge context (which layers apply), resolve layers from DB, merge via `mergeWithGovernance()`, cache the result.
+- **Login time:** App resolves all layer memberships for the user, calls core merge, core caches the result keyed by the new JWT.
+- **Layer change (PG NOTIFY):** Scan cache for entries whose `layerIds[]` contains the changed layer ID, evict those entries. Affected requests rebuild lazily on next cache miss.
+- **JWT revocation:** Delete entry from cache directly by JWT key.
+
+### Key Properties
+
+- Same user across multiple apps/sessions = separate cache entries (different JWTs)
+- No `remergeAll()` — replaced by targeted eviction + lazy rebuild
+- The JWT is treated as an opaque string — core never decodes it. The app's auth system owns JWT validation and layer resolution.
 
 ---
 
@@ -337,11 +357,13 @@ When org config changes, `remergeAll()` re-merges every cached user in-memory us
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/api/settings/:appName` | GET | Returns effective merged config for the current user |
-| `/api/settings/user` | PUT | Updates the current user's preferences |
-| `/api/settings/overrides/:appName` | PUT | Writes org-level overrides (admin only) |
-| `/api/settings/overrides/:appName` | DELETE | Wipes all org overrides, falls back to platform defaults |
-| `/api/settings/rollback` | POST | Reverts a config layer to a previous version from `config_history` |
+| `/api/settings` | GET | Returns effective merged config (requires `appId`, `environment` params) |
+| `/api/settings/:key` | PUT | Writes a config value (body: `{ value, appId, environment, layerName, layerKey }`) |
+| `/api/settings/:key` | DELETE | Deletes a config value (requires `appId`, `environment`, `layerName`, `layerKey` params) |
+| `/api/settings/audit` | GET | Returns audit trail (requires `appId`, `environment` params) |
+| `/api/settings/stats` | GET | Returns config service statistics |
+
+> **Note:** Per-request automatic resolution (attaching effective config to `event.context`) is handled by the JWT cache layer (Part 6), not the Settings API. The Settings API is for explicit reads and writes by the control plane.
 
 ---
 
@@ -379,24 +401,24 @@ Nuxt 4 handles build-time environments via `$production`, `$development`, and `$
 
 | Operation | Target | Mechanism |
 |-----------|--------|-----------|
-| Cached config read (user in K/V) | <1ms | In-memory Map lookup |
-| Governance-aware merge (3 tiers) | <1ms | merge-change + path stripping |
+| Cached config read (JWT in Map) | <1ms | In-memory Map lookup by JWT string |
+| Governance-aware merge (n layers) | <1ms | deepMerge + path stripping |
 | Cache miss (DB fetch + merge) | <10ms | Single query + merge |
-| Org config propagation | <2s | PG NOTIFY → reload → remergeAll |
-| User settings push (targeted) | <2s | PG NOTIFY → target node → cache swap |
+| Layer config propagation | <2s | PG NOTIFY → scan JWT cache → evict affected entries |
+| JWT cache eviction + lazy rebuild | <2s | Evict by layerIds scan, rebuild on next cache miss |
 
 ---
 
 ## Part 11: Future Considerations
 
-### Group Service (Future ADR)
-Adds `group` layer type, reverse index for targeted invalidation, extends merge chain: platform → org → group(s) → user.
+### Group Layers
+The extensible layer model handles groups natively — apps define group layers (e.g., `team`, `department`, `domain`) in their merge chain via `$meta.layers`. No separate Group Service ADR is needed. The JWT cache's `layerIds[]` scan handles invalidation without a reverse index.
 
-### Context Service (Future ADR)
-Lightweight post-merge transforms per-request (time of day, geolocation, device type). Stateless, no new cache entries.
+### Contextual Layers
+Per-request context (geo, device type, time of day) can be resolved at login time and baked into the JWT cache entry. No runtime evaluation engine needed — the context is static for the duration of the session.
 
 ### Wire Optimization (Future ADR)
-SchemaPack for binary diff transmission on the targeted user settings push path.
+SchemaPack for binary diff transmission on the targeted settings push path.
 
 ### Feature Flag System (ADR-006)
 Nuxt 4 has no feature flag system. ADR-006 will define the approach, including building components as toggleable features for A/B testing and production on/off control.
@@ -407,17 +429,18 @@ Nuxt 4 has no feature flag system. ADR-006 will define the approach, including b
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Runtime merge engine | [merge-change](https://github.com/nickelshoe/merge-change) | Path operations, diff tracking, array control |
+| Runtime merge engine | Custom `deepMerge` with governance | Path operations, diff computation, `$meta.lock` stripping |
 | Governance model | `$meta.lock` only | Nuxt handles secrets via `.public`/`.app` separation |
 | Governance namespace | `$meta` | Aligns with Nuxt's existing `$meta` convention |
-| Config tiers (v1) | Platform → Organization → User | Simplest model; groups/context deferred |
+| Layer model | Extensible — `core → core:org → core:app → [...app-defined] → user` | Apps define merge chains via `$meta.layers`; `layer_name` is freeform |
+| Request-level resolution | JWT as opaque cache key, app-defined layer resolver | Core never decodes JWTs; apps own auth and layer membership |
 | Propagation | PG NOTIFY | Simple, stateless nudge. Table is source of truth. |
-| Production storage | PostgreSQL | PG NOTIFY, JSONB, triggers, scalable |
+| Production storage | PostgreSQL + JWT-keyed in-memory cache | PG NOTIFY, JSONB, triggers, sub-ms cache reads |
 | Development storage | SQLite | Zero setup, same data model |
 | Server hot-reload | Nitro plugin + direct mutation | `useRuntimeConfig()` returns a mutable object |
 | Client hot-reload | Settings API + WebSocket | `runtimeConfig.public` is already reactive |
 | Audit trail | `config_history` table | SOC2/SOX compliance, rollback support |
-| Feature flags | Deferred to [ADR-006](./006-feature-flag-system.md) | No Nuxt 4 support exists |
+| Feature flags | Deferred to [ADR-006](./006-agent-context-and-decision-records.md) | No Nuxt 4 support exists |
 
 ---
 
@@ -428,8 +451,8 @@ Nuxt 4 has no feature flag system. ADR-006 will define the approach, including b
 - [Nuxt issue #34270](https://github.com/nuxt/nuxt/issues/34270) — `$meta.lock` feature request
 
 ### Merge Engine
-- [merge-change](https://github.com/nickelshoe/merge-change) — runtime merge library
 - [unjs/defu](https://github.com/unjs/defu) — build-time merge library (Nuxt, not this system)
+- `core/server/utils/config-service/merge.ts` — runtime merge implementation (`deepMerge`, `mergeWithGovernance`)
 
 ### PostgreSQL
 - [PostgreSQL LISTEN/NOTIFY](https://www.postgresql.org/docs/current/sql-notify.html)
@@ -440,4 +463,4 @@ Nuxt 4 has no feature flag system. ADR-006 will define the approach, including b
 
 ### Related ADRs
 - [ADR-004: Layer Cascade, i18n, and Cross-Cutting Concerns](./004-layer-cascade-i18n-and-cross-cutting-concerns.md) — build-time configuration
-- ADR-006: Feature Flag System (planned) — feature flags and A/B testing
+- [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md) (feature flags tracked as knowledge slug)

@@ -3,6 +3,10 @@
 ## Status
 **Accepted** (Implemented 2026-02-03)
 
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Revision note (2026-02-12):** Added Decision 9 — MCP transport memory leak fix. The default `@nuxtjs/mcp-toolkit` transport leaks Node.js event listeners via `@hono/node-server`'s `getRequestListener`. Replaced with a custom `WebStandardStreamableHTTPServerTransport` handler, overridden via inline Nuxt module. Also raises `EventEmitter.defaultMaxListeners` to 20 in dev to suppress false-positive warnings from Nitro's middleware/proxy stack (~11 legitimate, properly-cleaned-up listeners per request).
+
 ## Date
 2026-02-03
 
@@ -323,6 +327,57 @@ export default defineNuxtConfig({
 - Docs is a sibling that runs during dev, not a dependency
 - Production builds explicitly filter to `/apps/*` only
 - If customers want to deploy docs separately: `bun run build:docs`
+
+---
+
+### Decision 9: MCP Transport Memory Leak Fix
+
+**Problem**: The default MCP transport in `@nuxtjs/mcp-toolkit` v0.6.2 uses `StreamableHTTPServerTransport` which internally calls `getRequestListener()` from `@hono/node-server`. This adds `close` and `error` event listeners to Node.js `ServerResponse` objects that never get cleaned up, causing a memory leak (observed: 10GB+ over days with persistent MCP connections from Claude Code).
+
+Additionally, in dev mode, each request passes through ~11 middleware/proxy layers (Vite plugins + httpxy proxy), each adding legitimate `close`/`error` listeners to `ServerResponse`. These ARE cleaned up on response finish, but exceed Node's default `maxListeners` of 10, triggering false-positive `MaxListenersExceededWarning`.
+
+**Solution**: Two-part fix in `core/docs/nuxt.config.ts`:
+
+1. **Custom transport handler** (`core/docs/server/utils/mcp-transport.ts`): Uses `WebStandardStreamableHTTPServerTransport` from the MCP SDK (Web Streams API, zero Node.js event listeners) + h3's `sendWebResponse` (uses `pipeTo()`, no listeners). Deterministic cleanup via `try/finally`.
+
+2. **Inline Nuxt module** (in `nuxt.config.ts`, after `@nuxtjs/mcp-toolkit`): Overrides the `#nuxt-mcp/transport.mjs` virtual module to point to our custom transport. Also raises `EventEmitter.defaultMaxListeners` to 20 in dev to suppress false-positive warnings from the middleware stack.
+
+```typescript
+// core/docs/nuxt.config.ts — inline module after @nuxtjs/mcp-toolkit
+defineNuxtModule({
+  meta: { name: 'mcp-transport-fix' },
+  setup(_options, nuxt) {
+    // Override the MCP transport virtual module
+    const transportPath = resolve(
+      fileURLToPath(new URL('./', import.meta.url)),
+      'server/utils/mcp-transport'
+    ).replace(/\\/g, '/')
+    nuxt.options.nitro.virtual = nuxt.options.nitro.virtual || {}
+    nuxt.options.nitro.virtual['#nuxt-mcp/transport.mjs'] = () =>
+      `export { default } from '${transportPath}'`
+
+    // Suppress false-positive MaxListenersExceeded warning in dev
+    if (nuxt.options.dev) {
+      const { EventEmitter } = require('node:events')
+      if (EventEmitter.defaultMaxListeners < 20) {
+        EventEmitter.defaultMaxListeners = 20
+      }
+    }
+  }
+}),
+```
+
+**Key technical details:**
+- `@nuxtjs/mcp-toolkit` uses `addServerTemplate` which writes to `nuxt.options.nitro.virtual[filename]` — last writer wins, so our module (listed after the toolkit) overrides its transport
+- `defineNuxtModule` must be explicitly imported from `@nuxt/kit` — it is NOT auto-imported in `nuxt.config.ts`
+- The custom transport survives `bun install` (it's source code, not a node_modules patch)
+- The `maxListeners` raise only applies in dev mode — production has no Vite middleware stack
+
+**Rationale:**
+- Fixes a real memory leak that made long-running MCP connections unsustainable
+- Web Standard transport is the correct abstraction for h3/Nitro (which is built on Web Standards)
+- Virtual module override is the designed extension point — not a hack
+- The fix is invisible to MCP clients — same protocol, same tools, zero behavioral change
 
 ---
 

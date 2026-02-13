@@ -1,0 +1,20 @@
+{
+  "core": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "close": "Close"
+    },
+    "errors": {
+      "notFound": "Page not found",
+      "serverError": "Something went wrong",
+      "unauthorized": "Not authorized"
+    },
+    "status": {
+      "loading": "Loading...",
+      "empty": "No items found"
+    }
+  }
+}

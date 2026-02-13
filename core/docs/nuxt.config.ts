@@ -1,4 +1,6 @@
 import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { defineNuxtModule } from '@nuxt/kit'
 
 /**
  * App Agent Documentation Layer
@@ -34,7 +36,41 @@ export default defineNuxtConfig({
     '@nuxt/content',
     'nuxt-og-image',
     'nuxt-llms',
-    '@nuxtjs/mcp-toolkit'
+    '@nuxtjs/mcp-toolkit',
+
+    // Fix MCP transport memory leak + suppress false-positive MaxListenersExceeded warning.
+    //
+    // Two issues:
+    // 1. LEAK (fixed): Default MCP transport uses @hono/node-server getRequestListener
+    //    which adds close/error listeners that never get cleaned up. Our replacement uses
+    //    WebStandardStreamableHTTPServerTransport (zero Node.js event listeners).
+    // 2. WARNING (suppressed): In dev, each request passes through ~11 middleware/proxy
+    //    layers (Vite plugins + httpxy proxy), each adding a close/error listener to
+    //    ServerResponse. These ARE cleaned up on response finish — not a leak, just
+    //    exceeds Node's default maxListeners of 10.
+    defineNuxtModule({
+      meta: { name: 'mcp-transport-fix' },
+      setup(_options, nuxt) {
+        // Override the MCP transport virtual module
+        const transportPath = resolve(
+          fileURLToPath(new URL('./', import.meta.url)),
+          'server/utils/mcp-transport'
+        ).replace(/\\/g, '/')
+        nuxt.options.nitro.virtual = nuxt.options.nitro.virtual || {}
+        nuxt.options.nitro.virtual['#nuxt-mcp/transport.mjs'] = () =>
+          `export { default } from '${transportPath}'`
+
+        // Raise default maxListeners in dev to suppress false-positive warnings.
+        // Each request passes through ~11 middleware/proxy layers that add close/error
+        // listeners to ServerResponse. These are cleaned up on response close — not a leak.
+        if (nuxt.options.dev) {
+          const { EventEmitter } = require('node:events')
+          if (EventEmitter.defaultMaxListeners < 20) {
+            EventEmitter.defaultMaxListeners = 20
+          }
+        }
+      }
+    }),
   ],
 
   devtools: {

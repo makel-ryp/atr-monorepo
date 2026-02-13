@@ -1,9 +1,13 @@
 # ADR-004: Layer Configuration Cascade, i18n, and Cross-Cutting Concerns
 
 ## Status
-**Proposed**
+**Accepted**
 
-> **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-tenant overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags have been extracted to [ADR-006](./006-feature-flag-system.md).
+> **Archive notice:** This ADR is retained as historical reference. Operational knowledge is managed via feature knowledge files (`core/docs/knowledge/`) and MCP tools (`explain`, `record`). Remaining work is tracked in [GitHub Issues](https://github.com/app-agent-io/core/issues).
+
+> **Revision note (2026-02-07):** Part 6 was revised to separate build-time and runtime configuration concerns. Runtime configuration (control plane, per-layer overrides, runtime i18n overrides) has been extracted to [ADR-005](./005-runtime-configuration-service.md). Feature flags are tracked as the `feature-flags` knowledge slug (see [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md)).
+
+> **Revision note (2026-02-10):** Example 4 (Tenant Context Injection) is superseded by ADR-005's extensible layer model. Layer resolution is app-specific, not a core middleware concern — the `config_layers` 4-tuple `(app_id, environment, layer_name, layer_key)` generalizes past single-tenant context. Middleware execution order updated to reflect implemented middleware: `00.requestId.ts`, `01.rateLimit.ts`, `02.logging.ts`.
 
 ## Date
 2026-02-06
@@ -12,7 +16,7 @@
 
 This project uses a layered Nuxt 4 monorepo architecture (see [ADR-002](./002-monorepo-architecture.md)). As we build out the platform, we need a formal understanding of how configuration, components, composables, server middleware, and services cascade across layers — and how to harness that cascade for cross-cutting concerns like internationalization, logging, health checks, rate limiting, and runtime configuration overrides.
 
-This ADR captures the merge semantics, establishes patterns, identifies edge cases, and provides build-time configuration guidance. Runtime configuration (hot-reloadable settings, per-tenant overrides, control plane) is covered separately in [ADR-005](./005-runtime-configuration-service.md).
+This ADR captures the merge semantics, establishes patterns, identifies edge cases, and provides build-time configuration guidance. Runtime configuration (hot-reloadable settings, per-layer overrides, control plane) is covered separately in [ADR-005](./005-runtime-configuration-service.md).
 
 ### Terminology
 
@@ -153,9 +157,9 @@ Server middleware runs in **alphabetical order by filename**. Use numeric prefix
 
 ```
 server/middleware/
-  00.cors.ts          ← runs first (from core)
-  01.rateLimit.ts     ← runs second (from core)
-  02.tenantContext.ts  ← runs third (from core)
+  00.requestId.ts     ← runs first (from core) — request ID injection
+  01.rateLimit.ts     ← runs second (from core) — token bucket rate limiting
+  02.logging.ts       ← runs third (from core) — structured logging context
   10.appSpecific.ts   ← runs later (from app)
 ```
 
@@ -494,31 +498,13 @@ Core provides the middleware with sensible defaults (150 requests per 5 minutes)
 
 See Part 5 below.
 
-#### Example 4: Tenant Context Injection
+#### Example 4: Layer Resolution Context (Superseded)
 
-```typescript
-// core/server/middleware/02.tenantContext.ts
-export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event)
-  if (!config.multiTenancy?.enabled) return
+> **Note:** The original tenant context injection pattern described here has been superseded by [ADR-005](./005-runtime-configuration-service.md)'s extensible layer model.
 
-  // Extract tenant from JWT, subdomain, or header
-  const tenantId = extractTenantId(event)
-  if (!tenantId) return
+The `config_layers` 4-tuple `(app_id, environment, layer_name, layer_key)` replaces the single-tenant model. Layer resolution context is app-specific — each app defines its own merge chain via `$meta.layers` and resolves layer keys from its own auth/identity system.
 
-  // Fetch tenant config from control plane API (or cache)
-  const tenantConfig = await fetchTenantConfig(tenantId)
-
-  // Attach to event context — available to all route handlers
-  event.context.tenant = {
-    id: tenantId,
-    config: tenantConfig,
-    features: tenantConfig.features || {}
-  }
-})
-```
-
-Every app inherits tenant detection. If `multiTenancy.enabled` is `false` (the default), the middleware is a no-op. The organization turns it on by setting `runtimeConfig.multiTenancy.enabled: true`.
+Per-request configuration resolution is handled by the JWT-keyed cache layer described in ADR-005 Part 6, not by a core middleware. This keeps the core layer agnostic to how apps model their users, groups, or tenants.
 
 ### What Makes This "Aspect-Oriented"
 
@@ -642,7 +628,7 @@ We extend the standard with custom check types for layer introspection:
 - `layers:cascade` — reports the active layer chain and merged counts
 - `i18n:localesLoaded` — reports which locales are available
 - `config:overrides` — reports how many runtime overrides are active (from control plane)
-- `features:enabled` — reports active feature flags per tenant
+- `features:enabled` — reports active feature flags per app
 
 These custom checks follow the spec's extensibility model (any key in the `checks` object is valid).
 
@@ -652,7 +638,7 @@ These custom checks follow the spec's extensibility model (any key in the `check
 
 This section covers how configuration is structured at **build time** — the values baked into `nuxt.config.ts` and `app.config.ts` via the layer cascade, and the startup-time environment variable overrides that Nuxt applies at process start.
 
-> **Note:** Runtime configuration (per-tenant overrides, control plane, live settings changes) is defined in [ADR-005](./005-runtime-configuration-service.md). Feature flags are defined in ADR-006.
+> **Note:** Runtime configuration (per-layer overrides, control plane, live settings changes) is defined in [ADR-005](./005-runtime-configuration-service.md). Feature flags are defined in ADR-006.
 
 ### Two Tiers of Build-Time Configuration
 
@@ -718,8 +704,8 @@ These overrides are resolved at **build time** and become part of the built arti
 | Logging destination | `runtimeConfig` (private) | Server-only, env var overridable |
 | Rate limit thresholds | `runtimeConfig` (private) | Server-only, per-environment |
 | Database connection string | `runtimeConfig` (private) | Provisioning concern |
-| Feature flags | See ADR-006 | Requires runtime evaluation |
-| Per-tenant settings | See [ADR-005](./005-runtime-configuration-service.md) | Requires runtime service |
+| Feature flags | See `feature-flags` knowledge slug | Requires runtime evaluation |
+| Per-layer settings | See [ADR-005](./005-runtime-configuration-service.md) | Requires runtime service |
 
 ### What `runtimeConfig` Is NOT For
 
@@ -800,7 +786,9 @@ Layers must be "prepared" before consuming apps can build. Turborepo handles thi
 
 The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md)) already provides MCP tools for codebase introspection. We extend this to include build-time configuration introspection.
 
-> **Note:** Runtime configuration introspection tools (live settings, per-tenant overrides, control plane dashboards) are defined in [ADR-005](./005-runtime-configuration-service.md).
+> **Note:** Runtime configuration introspection tools (live settings, per-layer overrides, control plane dashboards) are defined in [ADR-005](./005-runtime-configuration-service.md).
+
+> **Note (Feb 2026):** Deferred -- the original design was dump-everything introspection tools. Tracked as GitHub issue [#13](https://github.com/app-agent-io/core/issues/13) with a query-based redesign approach.
 
 ### New MCP Tools for Configuration
 
@@ -818,15 +806,15 @@ The `/docs` app (see [ADR-003](./003-developer-experience-and-documentation.md))
 
 ### 9.1 Feature Flag System
 
-Nuxt 4 has no built-in feature flag system. The existing Nuxt module ecosystem for feature flags targets Nuxt 3 only. ADR-006 will define the approach, including building components as toggleable features for A/B testing and production on/off control.
+Implemented -- runtime support via `defineFeature*()` wrappers (ADR-009). Feature flag gating tracked as `feature-flags` knowledge slug.
 
 ### 9.2 Multi-Tenancy via Layer Cascade
 
-The layer cascade provides the **build-time foundation** for multi-tenancy: shared build artifacts, layer-based defaults, and build-time tenant variants via `$env` overrides. Runtime multi-tenancy concerns are defined in [ADR-005](./005-runtime-configuration-service.md).
+Implemented via ADR-005's extensible layer model.
 
 ### 9.3 `$meta.lock` for Build-Time Config Locking
 
-There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues/34270)) to add a `$meta.lock` convention to Nuxt's configuration system. This would allow lower-priority layers to lock specific config paths so that higher-priority layers cannot override them. This aligns with Nuxt's existing `$meta` convention and would give build-time configuration the same governance capability that [ADR-005](./005-runtime-configuration-service.md) provides at runtime.
+Runtime implementation complete in ADR-005's `mergeWithGovernance()`. Upstream Nuxt proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues/34270)) is independent and unrelated to our implementation.
 
 ---
 
@@ -842,7 +830,7 @@ There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues
 | Health check format | `application/health+json` (IETF draft) with extensions | Most semantically rich, AI-parseable, vendor-neutral |
 | Build-time config tiers | 2-tier: source code + startup env vars | Matches Nuxt 4's actual behavior |
 | Runtime configuration | See [ADR-005](./005-runtime-configuration-service.md) | Separated to clarify build-time vs runtime boundary |
-| Feature flags | See ADR-006 | No Nuxt 4 module exists; requires dedicated design |
+| Feature flags | See `feature-flags` knowledge slug | No Nuxt 4 module exists; requires dedicated design |
 
 ---
 
@@ -873,4 +861,4 @@ There is an open proposal ([nuxt/nuxt#34270](https://github.com/nuxt/nuxt/issues
 - [ADR-002: Monorepo Architecture](./002-monorepo-architecture.md)
 - [ADR-003: Developer Experience and Documentation](./003-developer-experience-and-documentation.md)
 - [ADR-005: Runtime Configuration Service](./005-runtime-configuration-service.md)
-- ADR-006: Feature Flag System (planned)
+- [ADR-006: Context Oracle](./006-agent-context-and-decision-records.md) (feature flags tracked as knowledge slug)

@@ -1,3 +1,19 @@
+KwJKl28Wh
+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
+
+
+can you create github issues in detail for this project? I want to still:
+
+1) Get the chat demo working (needs config of some sort, do a websearch to figure out what
+
+2) get an actual chat agent situated that is special, sort of like /docs. Please look into the chat features and the docs features (mcp server) and give me some ideas of what to do here (write the first version, we can always refine)
+
+3) Update issue #1,
+
+concerning adding i18n... it looks like Nuxt ALREADY has a locale feature built into nuxt templates? I see there is a nuxt module (https://github.com/nuxt-modules/i18n) as well. What is the best way for a nuxt 4 app to do this?
+
+
+
 # Configurable Items in Demo Apps
 
 A comprehensive analysis of all items that should be configurable by customers across the landing, saas, and dashboard demo applications.

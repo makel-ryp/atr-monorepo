@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { seo, brand } = useAppConfig()
 const colorMode = useColorMode()
+const uiLocale = useUiLocale()
 
 const color = computed(() => colorMode.value === 'dark' ? '#171717' : 'white')
 
@@ -11,10 +12,7 @@ useHead({
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
-  ],
-  htmlAttrs: {
-    lang: 'en'
-  }
+  ]
 })
 
 useSeoMeta({
@@ -24,7 +22,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp :toaster="{ expand: false }">
+  <UApp :locale="uiLocale" :toaster="{ expand: false }">
     <AppHeader />
 
     <UMain>

@@ -13,10 +13,7 @@
     "noEmit": true
   },
   "references": [
-    { "path": "./core" },
-    { "path": "./apps/admin" },
-    { "path": "./apps/demo" },
-    { "path": "./apps/www" }
+    { "path": "./core" }
   ],
   "files": [],
   "exclude": ["node_modules"]

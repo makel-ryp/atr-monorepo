@@ -1,0 +1,20 @@
+{
+  "core": {
+    "actions": {
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "close": "Cerrar"
+    },
+    "errors": {
+      "notFound": "Página no encontrada",
+      "serverError": "Algo salió mal",
+      "unauthorized": "No autorizado"
+    },
+    "status": {
+      "loading": "Cargando...",
+      "empty": "No se encontraron elementos"
+    }
+  }
+}

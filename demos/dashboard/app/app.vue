@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { seo, brand } = useAppConfig()
 const colorMode = useColorMode()
+const uiLocale = useUiLocale()
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
 
@@ -12,10 +13,7 @@ useHead({
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }
-  ],
-  htmlAttrs: {
-    lang: 'en'
-  }
+  ]
 })
 
 const title = computed(() => `${seo?.siteName || brand?.name || 'Dashboard'}`)
@@ -31,7 +29,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocale">
     <NuxtLoadingIndicator />
 
     <NuxtLayout>
