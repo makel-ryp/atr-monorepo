@@ -128,7 +128,13 @@ useIntervalFn(() => refresh(), 30000)
               { accessorKey: 'port', header: 'Port' },
               { accessorKey: 'url', header: 'URL' }
             ]"
-          />
+          >
+            <template #url-cell="{ row }">
+              <a :href="row.original.url" target="_blank" class="text-primary hover:underline font-mono text-sm">
+                {{ row.original.url }}
+              </a>
+            </template>
+          </UTable>
         </UCard>
       </div>
 

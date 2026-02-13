@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { en } from '@nuxt/ui/locale'
+
 const colorMode = useColorMode()
-const uiLocale = useUiLocale()
+const _uiLocale = useUiLocale()
+const uiLocale = computed(() => _uiLocale.value || en)
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
 

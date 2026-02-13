@@ -13,6 +13,13 @@ const levelColor: Record<string, string> = {
   warn: 'warning',
   log: 'neutral'
 }
+
+function formatTimestamp(ts: string): string {
+  const d = new Date(ts)
+  if (isNaN(d.getTime())) return ts
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${String(d.getMilliseconds()).padStart(3, '0')}`
+}
 </script>
 
 <template>
@@ -152,6 +159,9 @@ const levelColor: Record<string, string> = {
               { accessorKey: 'message', header: 'Message' }
             ]"
           >
+            <template #timestamp-cell="{ row }">
+              <span class="text-sm font-mono text-muted">{{ formatTimestamp(row.original.timestamp) }}</span>
+            </template>
             <template #level-cell="{ row }">
               <UBadge :color="(levelColor[row.original.level] as any) || 'neutral'" variant="subtle" size="sm">
                 {{ row.original.level }}

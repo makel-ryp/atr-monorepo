@@ -13,14 +13,7 @@ const { data: settings, refresh: refreshSettings, error: settingsError } = await
 
 const { data: stats, refresh: refreshStats } = await useFetch('/api/settings/stats')
 
-const auditQuery = computed(() => ({
-  appId: appId.value,
-  environment: environment.value
-}))
-
-const { data: audit, refresh: refreshAudit } = await useFetch('/api/settings/audit', {
-  query: auditQuery
-})
+const { data: audit, refresh: refreshAudit } = await useFetch('/api/control/audit')
 
 function refreshAll() {
   refreshSettings()
@@ -161,11 +154,31 @@ const configEntries = computed(() => {
         </UCard>
 
         <!-- Audit log -->
-        <UCard v-if="audit">
+        <UCard v-if="audit?.length">
           <template #header>
-            <span class="font-semibold">Audit Log</span>
+            <span class="font-semibold">Recent Changes ({{ audit.length }})</span>
           </template>
-          <pre class="text-sm overflow-auto max-h-96">{{ JSON.stringify(audit, null, 2) }}</pre>
+
+          <UTable
+            :data="audit"
+            :columns="[
+              { accessorKey: 'changed_at', header: 'Time' },
+              { accessorKey: 'action', header: 'Action' },
+              { accessorKey: 'layer_name', header: 'Layer' },
+              { accessorKey: 'changed_by', header: 'Changed By' },
+              { accessorKey: 'change_reason', header: 'Reason' }
+            ]"
+          >
+            <template #action-cell="{ row }">
+              <UBadge
+                :color="row.original.action === 'delete' ? 'error' : row.original.action === 'create' ? 'success' : 'neutral'"
+                variant="subtle"
+                size="sm"
+              >
+                {{ row.original.action }}
+              </UBadge>
+            </template>
+          </UTable>
         </UCard>
       </div>
     </template>

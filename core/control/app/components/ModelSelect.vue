@@ -1,10 +1,15 @@
 <script setup lang="ts">
 const { model, models, formatModelName } = useModels()
 
+function modelIcon(m: string) {
+  const prefix = m.split('/')[0]
+  return prefix ? `i-simple-icons-${prefix}` : 'i-lucide-bot'
+}
+
 const items = computed(() => models.value.map(m => ({
   label: formatModelName(m),
   value: m,
-  icon: `i-simple-icons-${m.split('/')[0]}`
+  icon: modelIcon(m)
 })))
 </script>
 
@@ -13,7 +18,7 @@ const items = computed(() => models.value.map(m => ({
     v-model="model"
     :items="items"
     size="sm"
-    :icon="`i-simple-icons-${model.split('/')[0]}`"
+    :icon="modelIcon(model)"
     variant="ghost"
     value-key="value"
     class="hover:bg-default focus:bg-default data-[state=open]:bg-default"
