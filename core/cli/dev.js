@@ -136,8 +136,8 @@ async function copyDemo(demoId, appName) {
   const pkg = JSON.parse(await readFile(pkgPath, 'utf-8'))
 
   pkg.name = `@app-agent/${appName}`
-  // First customer app gets port 3001
-  pkg.scripts.dev = 'nuxt dev --port 3001'
+  // First customer app gets port 3002 (3001 is reserved for control plane)
+  pkg.scripts.dev = 'nuxt dev --port 3002'
 
   await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 
@@ -149,7 +149,7 @@ async function copyDemo(demoId, appName) {
 
   console.log(`\n✅ Created apps/${appName}`)
   console.log(`   Package: @app-agent/${appName}`)
-  console.log(`   Port: 3001`)
+  console.log(`   Port: 3002`)
 
   // Warn if the copied demo had a .env file
   if (existsSync(join(destDir, '.env'))) {
@@ -161,7 +161,7 @@ async function copyDemo(demoId, appName) {
   console.log(`\nNext steps:`)
   console.log(`   1. Run: bun install`)
   console.log(`   2. Run: bun run dev`)
-  console.log(`\nYour app will be available at http://localhost:3001`)
+  console.log(`\nYour app will be available at http://localhost:3002`)
 }
 
 async function runTurbo(filters) {
@@ -246,12 +246,13 @@ async function interactiveSetup() {
     console.log('  Starting docs + demos...')
     console.log('')
     console.log('  Docs:      http://localhost:3000 (MCP server)')
+    console.log('  Control:   http://localhost:3001')
     console.log('  Dashboard: http://localhost:3010')
     console.log('  SaaS:      http://localhost:3011')
     console.log('  Landing:   http://localhost:3012')
     console.log('  Chat:      http://localhost:3013')
     console.log('')
-    await runTurbo(['@app-agent/docs', '@app-agent/demo-*'])
+    await runTurbo(['@app-agent/docs', '@app-agent/control', '@app-agent/demo-*'])
 
   } else {
     rl.close()

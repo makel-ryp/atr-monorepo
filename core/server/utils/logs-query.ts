@@ -1,25 +1,9 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import Database from 'better-sqlite3'
 
 let db: InstanceType<typeof Database> | null | undefined
-
-// Local getProjectRoot — docs-layer code loads before core auto-imports resolve
-let _root: string | undefined
-function getProjectRoot(): string {
-  if (_root) return _root
-  let dir = process.cwd()
-  while (dir !== dirname(dir)) {
-    if (existsSync(join(dir, 'turbo.json'))) {
-      _root = dir
-      return dir
-    }
-    dir = dirname(dir)
-  }
-  _root = process.cwd()
-  return _root
-}
 
 export function getLogsQueryDb(): InstanceType<typeof Database> | null {
   // Return cached connection if we have one

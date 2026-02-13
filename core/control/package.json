@@ -1,0 +1,32 @@
+{
+  "name": "@app-agent/control-layer",
+  "private": true,
+  "type": "module",
+  "description": "Nuxt layer providing control plane infrastructure - extended by /control/",
+  "scripts": {
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@app-agent/organization": "workspace:*",
+    "@ai-sdk/vue": "^3.0.50",
+    "@iconify-json/lucide": "^1.2.87",
+    "@iconify-json/simple-icons": "^1.2.68",
+    "@nuxt/ui": "^4.4.0",
+    "@nuxtjs/mdc": "^0.20.0",
+    "@vueuse/core": "^14.1.0",
+    "ai": "^6.0.50",
+    "better-sqlite3": "^12.6.2",
+    "nuxt": "^4.3.0",
+    "nuxt-auth-utils": "^0.5.28",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.13.0",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.2"
+  }
+}

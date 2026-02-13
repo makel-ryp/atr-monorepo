@@ -25,6 +25,7 @@ Server middleware from ALL layers executes (additive, never overrides).
 
 - `core/app/` — shared components, composables, layouts, plugins (auto-imported)
 - `core/docs/` — documentation app + MCP server (port 3000)
+- `core/control/` — control plane app (port 3001)
 - `core/docs/adr/` — architecture decision records (read before architectural changes)
 - `core/docs/knowledge/` — slug-based feature knowledge (see Feature Knowledge section)
 - `core/server/` — server middleware for cross-cutting concerns
@@ -39,7 +40,8 @@ Server middleware from ALL layers executes (additive, never overrides).
 ```bash
 bun install              # Install dependencies
 bun run dev              # Smart launcher (detects empty apps/, offers setup)
-bun run dev:demos        # Run all demos + docs
+bun run dev:demos        # Run all demos + docs + control
+bun run dev:control      # Control plane only (port 3001)
 bun run dev:docs         # Documentation only (port 3000)
 bun run typecheck        # TypeScript check (disabled during dev server)
 bun run lint             # ESLint
@@ -55,7 +57,8 @@ Build orchestration: Turborepo. TypeScript strict mode is on.
 | Range | Service |
 |-------|---------|
 | 3000 | Documentation + MCP server |
-| 3001–3009 | Customer apps |
+| 3001 | Control plane |
+| 3002–3009 | Customer apps |
 | 3010–3013 | Demos (dashboard, saas, landing, chat) |
 
 ## Secrets Management
