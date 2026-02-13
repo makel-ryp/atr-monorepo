@@ -1,4 +1,4 @@
-import { createUIMessageStream, createUIMessageStreamResponse, streamText, smoothStream } from 'ai'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, streamText, smoothStream } from 'ai'
 import type { UIMessage } from 'ai'
 import { z } from 'zod'
 
@@ -29,12 +29,14 @@ export default defineEventHandler(async (event) => {
     model: z.string()
   }).parse)
 
+  const modelMessages = await convertToModelMessages(messages)
+
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       const result = streamText({
         model: createModelForId(model),
         system: SYSTEM_PROMPT,
-        messages,
+        messages: modelMessages,
         experimental_transform: smoothStream({ chunking: 'word' })
       })
 
