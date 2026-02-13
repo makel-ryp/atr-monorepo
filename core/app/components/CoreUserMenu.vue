@@ -4,6 +4,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 const props = defineProps<{
   collapsed?: boolean
+  providers?: { label: string, icon: string, id: string }[]
 }>()
 
 const colorMode = useColorMode()
@@ -96,7 +97,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   }
 }]])
 
-const providers = computed(() => (appConfig as any).auth?.providers ?? [
+const resolvedProviders = computed(() => props.providers ?? (appConfig as any).auth?.providers ?? [
   { label: 'GitHub', icon: 'i-simple-icons-github', id: 'github' }
 ])
 </script>
@@ -143,7 +144,7 @@ const providers = computed(() => (appConfig as any).auth?.providers ?? [
 
   <template v-else>
     <UButton
-      v-for="provider in providers"
+      v-for="provider in resolvedProviders"
       :key="provider.id"
       :label="collapsed ? '' : `Login with ${provider.label}`"
       :icon="provider.icon"

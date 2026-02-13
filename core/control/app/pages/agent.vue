@@ -85,7 +85,8 @@ function getFileName(url: string): string {
     </template>
 
     <template #body>
-      <div v-if="!hasProvider" class="flex flex-col items-center justify-center h-64 text-center gap-3">
+      <div class="agent-bg absolute inset-0 pointer-events-none" aria-hidden="true" />
+      <div v-if="!hasProvider" class="relative flex flex-col items-center justify-center h-64 text-center gap-3">
         <UIcon name="i-lucide-bot" class="size-12 text-muted opacity-30" />
         <p class="text-muted">AI provider not configured.</p>
         <p class="text-sm text-muted">
@@ -192,3 +193,19 @@ function getFileName(url: string): string {
     </template>
   </UDashboardPanel>
 </template>
+
+<style scoped>
+.agent-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 90%, oklch(0.75 0.12 250 / 0.15), transparent),
+    radial-gradient(ellipse 60% 50% at 85% 20%, oklch(0.72 0.10 290 / 0.12), transparent),
+    radial-gradient(ellipse 50% 40% at 50% 50%, oklch(0.78 0.08 200 / 0.08), transparent);
+}
+
+:root.dark .agent-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 90%, oklch(0.35 0.12 250 / 0.25), transparent),
+    radial-gradient(ellipse 60% 50% at 85% 20%, oklch(0.30 0.10 290 / 0.20), transparent),
+    radial-gradient(ellipse 50% 40% at 50% 50%, oklch(0.32 0.08 200 / 0.15), transparent);
+}
+</style>

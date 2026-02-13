@@ -2,8 +2,12 @@
 defineProps<{
   collapsed?: boolean
 }>()
+
+const providers = [
+  { label: 'GitHub', icon: 'i-simple-icons-github', id: 'github' }
+]
 </script>
 
 <template>
-  <CoreUserMenu :collapsed="collapsed" />
+  <CoreUserMenu :collapsed="collapsed" :providers="providers" />
 </template>
