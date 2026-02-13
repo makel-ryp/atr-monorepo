@@ -14,16 +14,13 @@
 - Knowledge inline — feature detail pages render markdown via MDCCached
 - Agent tools — 5 tools: listFeatures, getFeatureDetail, queryLogs, getLogSummary, readKnowledge
 - Dependency graph — SVG graph on features page with clickable nodes and edge arrows
-
-## Short-term
-
-1. **Live log streaming** — SSE endpoint replacing polling
-2. **Config diff view** — Side-by-side environment comparison
+- Live log streaming — SSE endpoint + Live toggle with pulsing radio icon and "+N new" counter
+- Config diff — side-by-side environment comparison at /settings/diff with diff-only toggle
 
 ## Medium-term
 
-3. Agent multimodal support (file uploads)
-4. i18n management page
-5. User management (replace placeholder)
-6. Iframe app previews
-7. Feature scaffolding from agent/UI
+1. Agent multimodal support (file uploads)
+2. i18n management page
+3. User management (replace placeholder)
+4. Iframe app previews
+5. Feature scaffolding from agent/UI
