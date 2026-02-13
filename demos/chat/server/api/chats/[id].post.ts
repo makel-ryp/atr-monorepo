@@ -1,6 +1,7 @@
 import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, generateText, smoothStream, stepCountIs, streamText } from 'ai'
 import { z } from 'zod'
 import { db, schema } from 'hub:db'
+import { blob } from 'hub:blob'
 import { and, eq } from 'drizzle-orm'
 import type { UIMessage } from 'ai'
 
@@ -62,6 +63,32 @@ export default defineEventHandler(async (event) => {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
+      // Convert UI messages to model messages, then resolve local blob URLs to base64
+      const modelMessages = await convertToModelMessages(messages)
+      // Resolve local blob URLs to inline base64 so external AI providers can access them
+      for (const msg of modelMessages) {
+        if (!('content' in msg) || !Array.isArray(msg.content)) continue
+        for (let i = 0; i < msg.content.length; i++) {
+          const part = msg.content[i] as any
+          const blobPath = typeof part?.data === 'string' && part.data.startsWith('/api/upload/')
+            ? part.data.replace('/api/upload/', '')
+            : null
+          if (blobPath) {
+            try {
+              const blobData = await blob.get(blobPath)
+              if (blobData) {
+                const buffer = await blobData.arrayBuffer()
+                const base64 = Buffer.from(buffer).toString('base64')
+                msg.content[i] = { type: part.type, mediaType: part.mediaType, data: base64 } as any
+              }
+            }
+            catch {
+              // If blob fetch fails, leave as-is
+            }
+          }
+        }
+      }
+
       const result = streamText({
         model: createModelForId(model),
         system: `You are a knowledgeable and helpful AI assistant. ${session.user?.username ? `The user's name is ${session.user.username}.` : ''} Your goal is to provide clear, accurate, and well-structured responses.
@@ -80,7 +107,7 @@ export default defineEventHandler(async (event) => {
 - Use examples when helpful
 - Break down complex topics into digestible parts
 - Maintain a friendly, professional tone`,
-        messages: await convertToModelMessages(messages),
+        messages: modelMessages,
         providerOptions: {
           openai: {
             reasoningEffort: 'low',
