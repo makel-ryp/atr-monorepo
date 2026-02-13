@@ -52,6 +52,13 @@ export default defineNuxtConfig({
     blob: true
   },
 
+  // Pre-bundle CJS dependencies for ESM compatibility
+  vite: {
+    optimizeDeps: {
+      include: ['striptags']
+    }
+  },
+
   // Nitro server configuration
   nitro: {
     preset: 'bun',
