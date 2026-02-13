@@ -11,19 +11,19 @@
 - I3: port URLs — made clickable with `<a target="_blank">`
 - I8: audit log — replaced raw JSON with UTable + new `/api/control/audit` endpoint
 - Agent chat crash — added `convertToModelMessages()` before passing to `streamText()`
+- Knowledge inline — feature detail pages render markdown via MDCCached
+- Agent tools — 5 tools: listFeatures, getFeatureDetail, queryLogs, getLogSummary, readKnowledge
+- Dependency graph — SVG graph on features page with clickable nodes and edge arrows
 
 ## Short-term
 
-1. **Render knowledge content inline** — Use `@nuxtjs/mdc` on feature detail pages to show the actual markdown
-2. **Add agent tools** — Wire query functions (features, logs, settings) as AI SDK tool definitions
-3. **Feature dependency graph** — Visual node graph using `@unovis/ts`
-4. **Live log streaming** — SSE endpoint replacing polling
-5. **Config diff view** — Side-by-side environment comparison
+1. **Live log streaming** — SSE endpoint replacing polling
+2. **Config diff view** — Side-by-side environment comparison
 
 ## Medium-term
 
-6. Agent multimodal support (file uploads)
-7. i18n management page
-8. User management (replace placeholder)
-9. Iframe app previews
-10. Feature scaffolding from agent/UI
+3. Agent multimodal support (file uploads)
+4. i18n management page
+5. User management (replace placeholder)
+6. Iframe app previews
+7. Feature scaffolding from agent/UI
