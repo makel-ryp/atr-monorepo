@@ -24,13 +24,16 @@
     "test:watch": "vitest",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "enc": "multi-encrypt enc",
+    "dec": "multi-encrypt dec"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2",
     "happy-dom": "^17",
+    "multi-encrypt": "^2.0.0",
     "turbo": "^2.4.0",
     "typescript": "^5.9.3",
     "vitest": "^4",

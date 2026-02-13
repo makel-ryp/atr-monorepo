@@ -58,6 +58,25 @@ Build orchestration: Turborepo. TypeScript strict mode is on.
 | 3001–3009 | Customer apps |
 | 3010–3013 | Demos (dashboard, saas, landing, chat) |
 
+## Secrets Management
+
+<!-- SEE: feature "secrets-management" at core/docs/knowledge/secrets-management.md -->
+
+Secret `.env` files are encrypted into `encrypted.json` (committed to git) using `multi-encrypt`.
+
+```bash
+bun run enc              # Encrypt all secret files (interactive password prompt)
+bun run dec              # Decrypt all secret files (interactive password prompt)
+```
+
+**Manifest:** The `# Secrets` section at the bottom of `.gitignore` lists which files to encrypt. To add a new secret file, append its path there and run `bun run enc`.
+
+**Auto-decrypt:** The smart launcher (`bun run dev`) checks for missing secret files on startup. If `encrypted.json` exists but listed `.env` files are missing, it prompts for the password automatically.
+
+**CI/CD:** Store password as `MULTI_ENCRYPT_PASSWORD` GitHub Actions secret. Deploy workflows pipe it via stdin: `echo "$PASSWORD" | bunx multi-encrypt dec`.
+
+**Adding secrets for a new app:** When `copyDemo()` copies a demo that has a `.env`, the launcher warns you to add the new path to `# Secrets` in `.gitignore` and run `bun run enc`.
+
 ## Key Constraints
 
 - `runtimeConfig` is startup config, NOT runtime — see ADR-005 for actual runtime config

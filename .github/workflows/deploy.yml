@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Decrypt secrets
+        run: echo "${{ secrets.MULTI_ENCRYPT_PASSWORD }}" | bunx multi-encrypt dec
+
       - name: Build admin app
         run: bun run build:admin
         env:
@@ -57,6 +60,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Decrypt secrets
+        run: echo "${{ secrets.MULTI_ENCRYPT_PASSWORD }}" | bunx multi-encrypt dec
+
       - name: Build demo app
         run: bun run build:demo
         env:
@@ -81,6 +87,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Decrypt secrets
+        run: echo "${{ secrets.MULTI_ENCRYPT_PASSWORD }}" | bunx multi-encrypt dec
 
       - name: Build www app
         run: bun run build:www

@@ -7,8 +7,9 @@
  * to either copy a demo or explore the demos first.
  */
 
-import { spawn } from 'node:child_process'
+import { spawn, execSync } from 'node:child_process'
 import { readdir, cp, readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as readline from 'node:readline'
@@ -43,6 +44,50 @@ const DEMOS = [
     port: 3013
   }
 ]
+
+// SEE: feature "secrets-management" at core/docs/knowledge/secrets-management.md
+async function checkAndDecryptSecrets() {
+  const encryptedPath = join(rootDir, 'encrypted.json')
+  if (!existsSync(encryptedPath)) return // No vault yet — fresh fork
+
+  // Parse # Secrets section from .gitignore to get manifest
+  const gitignorePath = join(rootDir, '.gitignore')
+  if (!existsSync(gitignorePath)) return
+
+  const gitignore = await readFile(gitignorePath, 'utf-8')
+  const lines = gitignore.split('\n')
+  const secretsIdx = lines.findIndex(l => l.startsWith('# Secrets'))
+  if (secretsIdx === -1) return
+
+  const secretPaths = lines
+    .slice(secretsIdx + 1)
+    .filter(l => l.trim() && !l.startsWith('#'))
+    .map(l => l.trim())
+
+  // Check which files are missing
+  const missing = secretPaths.filter(p => !existsSync(join(rootDir, p)))
+  if (missing.length === 0) return
+
+  console.log('')
+  console.log('🔐 Encrypted secrets vault found, but these files are missing:')
+  for (const f of missing) {
+    console.log(`   - ${f}`)
+  }
+  console.log('')
+  console.log('   Decrypting from encrypted.json...')
+  console.log('')
+
+  try {
+    execSync('bun run dec', { stdio: 'inherit', cwd: rootDir })
+    console.log('')
+    console.log('✅ Secrets decrypted successfully.')
+    console.log('')
+  } catch {
+    console.error('')
+    console.error('❌ Failed to decrypt secrets. Dev server cannot start without them.')
+    process.exit(1)
+  }
+}
 
 function createReadline() {
   return readline.createInterface({
@@ -105,6 +150,14 @@ async function copyDemo(demoId, appName) {
   console.log(`\n✅ Created apps/${appName}`)
   console.log(`   Package: @app-agent/${appName}`)
   console.log(`   Port: 3001`)
+
+  // Warn if the copied demo had a .env file
+  if (existsSync(join(destDir, '.env'))) {
+    console.log(`\n⚠️  This demo has a .env file. Add it to the secrets manifest:`)
+    console.log(`   1. Add ./apps/${appName}/.env to the # Secrets section in .gitignore`)
+    console.log(`   2. Run: bun run enc`)
+  }
+
   console.log(`\nNext steps:`)
   console.log(`   1. Run: bun install`)
   console.log(`   2. Run: bun run dev`)
@@ -208,6 +261,8 @@ async function interactiveSetup() {
 }
 
 async function main() {
+  await checkAndDecryptSecrets()
+
   const apps = await getApps()
   const demos = await getDemos()
 

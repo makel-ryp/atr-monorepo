@@ -55,3 +55,9 @@ logs.db
 settings.db
 settings.db-wal
 settings.db-shm
+
+# Secrets - Handled by multi-encrypt
+# Files below are encrypted into encrypted.json (committed to repo).
+# After adding a new secret file: bun run enc
+./.env
+./demos/chat/.env
