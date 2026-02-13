@@ -136,6 +136,14 @@ function listKnowledgeSlugs(): string[] {
 }
 
 export default defineEventHandler(async (event) => {
+  const { ok, issues } = validateIntegrations()
+  if (!ok) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: `AI provider not configured: ${issues.join(', ')}. Set AI_PROVIDER_URL, AI_PROVIDER_KEY, and AI_PROVIDER_MODEL env vars.`
+    })
+  }
+
   const { messages, model } = await readValidatedBody(event, z.object({
     messages: z.array(z.custom<UIMessage>()),
     model: z.string()

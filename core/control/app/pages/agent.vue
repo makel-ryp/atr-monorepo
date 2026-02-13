@@ -7,7 +7,8 @@ import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 
 const toast = useToast()
 const clipboard = useClipboard()
-const { model } = useModels()
+const { model, models } = useModels()
+const hasProvider = computed(() => models.value.length > 0)
 
 const input = ref('')
 
@@ -53,7 +54,14 @@ function copy(_e: MouseEvent, message: UIMessage) {
     </template>
 
     <template #body>
-      <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
+      <div v-if="!hasProvider" class="flex flex-col items-center justify-center h-64 text-center gap-3">
+        <UIcon name="i-lucide-bot" class="size-12 text-muted opacity-30" />
+        <p class="text-muted">AI provider not configured.</p>
+        <p class="text-sm text-muted">
+          Set <code>AI_PROVIDER_URL</code>, <code>AI_PROVIDER_KEY</code>, and <code>AI_PROVIDER_MODEL</code> env vars to enable the agent.
+        </p>
+      </div>
+      <UContainer v-else class="flex-1 flex flex-col gap-4 sm:gap-6">
         <UChatMessages
           should-auto-scroll
           :messages="chat.messages"
