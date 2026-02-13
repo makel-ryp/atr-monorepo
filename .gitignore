@@ -68,4 +68,3 @@ settings.db-shm
 ./demos/chat/.env
 ./demos/dashboard/.env
 ./demos/landing/.env
-demos/dashboard/.data
