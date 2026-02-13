@@ -64,6 +64,7 @@ settings.db-shm
 # Files below are encrypted into encrypted.json (committed to repo).
 # After adding a new secret file: bun run enc
 ./.env
+./control/.env
 ./demos/chat/.env
 ./demos/dashboard/.env
 ./demos/landing/.env
