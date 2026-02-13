@@ -36,5 +36,8 @@
     "vitest": "^4",
     "vue-tsc": "^3.2.2"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.15",
+  "overrides": {
+    "uri-js": "npm:fast-uri@^3.0.0"
+  }
 }

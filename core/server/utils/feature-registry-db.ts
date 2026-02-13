@@ -53,6 +53,61 @@ interface EdgeRecord {
   type: 'contains' | 'uses'
 }
 
+export function syncSingleFeatureToDb(slug: string, wrapperType: string): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+    conn.prepare(`
+      INSERT INTO feature_registry (slug, wrapper_type)
+      VALUES (?, ?)
+      ON CONFLICT(slug) DO UPDATE SET
+        last_seen = datetime('now')
+    `).run(slug, wrapperType)
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
+}
+
+export function syncSingleEdgeToDb(from: string, to: string, type: string): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+    conn.prepare(`
+      INSERT INTO feature_edges (from_slug, to_slug, edge_type)
+      VALUES (?, ?, ?)
+      ON CONFLICT(from_slug, to_slug, edge_type) DO NOTHING
+    `).run(from, to, type)
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
+}
+
+export function syncCountsToDb(features: { slug: string, invocationCount: number, logCount: number }[]): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+
+    const update = conn.prepare(`
+      UPDATE feature_registry
+      SET invocation_count = ?, log_count = ?, last_seen = datetime('now')
+      WHERE slug = ?
+    `)
+
+    const transaction = conn.transaction(() => {
+      for (const f of features) {
+        update.run(f.invocationCount, f.logCount, f.slug)
+      }
+    })
+
+    transaction()
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
+}
+
 export function syncRegistryToDb(features: FeatureRecord[], edges: EdgeRecord[]): void {
   try {
     const conn = getFeatureRegistryDb()

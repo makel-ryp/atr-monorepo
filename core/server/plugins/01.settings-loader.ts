@@ -3,8 +3,7 @@ export default defineFeaturePlugin('runtime-config', async (feat, nitroApp) => {
   const provider = createConfigProvider()
 
   if (!provider) {
-    feat.warn('Core datasource not configured — runtime config service disabled')
-    feat.warn('Set CORE_DATASOURCE_URL, CORE_DATASOURCE_KEY, and CORE_DATASOURCE_PROVIDER in .env')
+    feat.log('No datasource configured — using static config only')
     return
   }
 

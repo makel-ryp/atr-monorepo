@@ -20,7 +20,12 @@ export class SupabaseConfigProvider implements ConfigProvider {
       .select('id')
       .limit(1)
     if (error) {
-      throw new Error(`Config service: failed to connect to Supabase — ${error.message}`)
+      const msg = error.message || ''
+      // Supabase returns HTML when the project is paused (free tier) or unreachable
+      if (msg.includes('<!DOCTYPE') || msg.includes('<html')) {
+        throw new Error('Config service: Supabase project appears paused or unreachable. Resume it at https://supabase.com/dashboard')
+      }
+      throw new Error(`Config service: failed to connect to Supabase — ${msg.slice(0, 200)}`)
     }
   }
 

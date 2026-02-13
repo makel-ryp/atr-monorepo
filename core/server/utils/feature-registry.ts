@@ -1,4 +1,5 @@
 // SEE: feature "feature-knowledge" at core/docs/knowledge/feature-knowledge.md
+import { syncSingleFeatureToDb, syncSingleEdgeToDb } from './feature-registry-db'
 
 interface FeatureRegistration {
   slug: string
@@ -32,6 +33,8 @@ export function registerFeature(slug: string, wrapperType: string = 'manual'): v
     logCount: 0,
     registeredAt: new Date().toISOString(),
   })
+  // Write-through: persist immediately so data survives crashes
+  syncSingleFeatureToDb(slug, wrapperType)
 }
 
 export function recordEdge(from: string, to: string, type: 'contains' | 'uses'): void {
@@ -40,6 +43,16 @@ export function recordEdge(from: string, to: string, type: 'contains' | 'uses'):
   if (edges.has(key)) return
   edges.add(key)
   edgeList.push({ from, to, type })
+  // Write-through: persist immediately so data survives crashes
+  syncSingleEdgeToDb(from, to, type)
+}
+
+export function getCounts(): { slug: string, invocationCount: number, logCount: number }[] {
+  return Array.from(features.values()).map(f => ({
+    slug: f.slug,
+    invocationCount: f.invocationCount,
+    logCount: f.logCount,
+  }))
 }
 
 export function incrementInvocations(slug: string): void {
