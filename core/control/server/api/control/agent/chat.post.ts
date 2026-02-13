@@ -34,10 +34,13 @@ const SYSTEM_PROMPT = `You are the App Agent Control Plane assistant — an AI d
 
 const tools = {
   listFeatures: tool({
-    description: 'List all registered features with their stats (invocation count, log count, wrapper type)',
-    parameters: z.object({}),
-    execute: async () => {
-      const features = queryFeatureRegistry()
+    description: 'List all registered features with their stats (invocation count, log count, wrapper type). Set filter to "*" for all features or provide a substring to filter by.',
+    inputSchema: z.object({
+      filter: z.string().describe('Text to filter feature slugs by, or "*" for all features')
+    }),
+    execute: async ({ filter }) => {
+      let features = queryFeatureRegistry()
+      if (filter && filter !== '*') features = features.filter(f => f.slug.includes(filter))
       const edges = queryFeatureEdges()
       const files = queryFileMappings()
       return {
@@ -57,7 +60,7 @@ const tools = {
 
   getFeatureDetail: tool({
     description: 'Get detailed information about a specific feature including its files, dependencies, and recent logs',
-    parameters: z.object({
+    inputSchema: z.object({
       slug: z.string().describe('The feature slug to look up')
     }),
     execute: async ({ slug }) => {
@@ -86,22 +89,25 @@ const tools = {
   }),
 
   queryLogs: tool({
-    description: 'Query recent logs with optional filters by feature slug, level (log/warn/error), and time range',
-    parameters: z.object({
-      slug: z.string().optional().describe('Filter by feature slug'),
-      level: z.enum(['log', 'warn', 'error']).optional().describe('Filter by log level'),
-      since: z.string().optional().describe('Time range like "1 hour", "30 minutes", "24 hours"'),
-      limit: z.number().optional().describe('Max results (default 20)')
+    description: 'Query recent logs with filters. Use slug "*" for all features, level "log" for all levels.',
+    inputSchema: z.object({
+      slug: z.string().describe('Feature slug to filter by, or "*" for all features'),
+      level: z.enum(['log', 'warn', 'error']).describe('Log level filter'),
+      limit: z.number().describe('Max results to return (e.g. 20)')
     }),
-    execute: async ({ slug, level, since, limit }) => {
-      return queryRecentLogs({ slug, level, since, limit: limit ?? 20 })
+    execute: async ({ slug, level, limit }) => {
+      return queryRecentLogs({
+        slug: slug === '*' ? undefined : slug,
+        level: level === 'log' ? undefined : level,
+        limit
+      })
     }
   }),
 
   getLogSummary: tool({
     description: 'Get a summary of logs: total count, breakdown by feature and level, recent errors',
-    parameters: z.object({
-      since: z.string().optional().describe('Time range like "1 hour", "24 hours"')
+    inputSchema: z.object({
+      since: z.string().describe('Time range like "1 hour", "24 hours", "7 days"')
     }),
     execute: async ({ since }) => {
       return getLogSummary(since)
@@ -110,7 +116,7 @@ const tools = {
 
   readKnowledge: tool({
     description: 'Read the knowledge documentation file for a feature slug. Returns the full markdown content.',
-    parameters: z.object({
+    inputSchema: z.object({
       slug: z.string().describe('The feature slug to read knowledge for')
     }),
     execute: async ({ slug }) => {

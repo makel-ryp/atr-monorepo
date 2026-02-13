@@ -12,7 +12,7 @@
 - I8: audit log — replaced raw JSON with UTable + new `/api/control/audit` endpoint
 - Agent chat crash — added `convertToModelMessages()` before passing to `streamText()`
 - Knowledge inline — feature detail pages render markdown via MDCCached
-- Agent tools — 5 tools: listFeatures, getFeatureDetail, queryLogs, getLogSummary, readKnowledge
+- Agent tools — 5 tools working end-to-end (3 fixes: `parameters`→`inputSchema`, all-required params for OpenRouter `isParsableJson` bug, tool invocation UI rendering)
 - Dependency graph — SVG graph on features page with clickable nodes and edge arrows
 - Live log streaming — SSE endpoint + Live toggle with pulsing radio icon and "+N new" counter
 - Config diff — side-by-side environment comparison at /settings/diff with diff-only toggle

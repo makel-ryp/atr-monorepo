@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Chat } from '@ai-sdk/vue'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, isToolUIPart } from 'ai'
 import type { UIMessage } from 'ai'
 import { useClipboard } from '@vueuse/core'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
@@ -82,6 +82,27 @@ function copy(_e: MouseEvent, message: UIMessage) {
               <p v-else-if="part.type === 'text' && message.role === 'user'" class="whitespace-pre-wrap">
                 {{ part.text }}
               </p>
+              <div v-else-if="isToolUIPart(part)" class="my-2 rounded-lg border border-default bg-muted/50 overflow-hidden">
+                <div class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-muted">
+                  <UIcon
+                    :name="part.state === 'output-available' ? 'i-lucide-check-circle' : part.state === 'output-error' ? 'i-lucide-alert-circle' : 'i-lucide-loader-circle'"
+                    :class="[
+                      'size-4',
+                      part.state === 'output-available' && 'text-success',
+                      part.state === 'output-error' && 'text-error',
+                      (part.state === 'input-streaming' || part.state === 'input-available') && 'animate-spin'
+                    ]"
+                  />
+                  <span>{{ part.type.replace('tool-', '') }}</span>
+                  <span v-if="part.input && Object.keys(part.input).length" class="text-dimmed">
+                    ({{ Object.entries(part.input).filter(([, v]) => v != null).map(([k, v]) => `${k}: ${v}`).join(', ') }})
+                  </span>
+                </div>
+                <pre v-if="part.state === 'output-available' && part.output" class="px-3 py-2 text-xs overflow-x-auto border-t border-default max-h-64 overflow-y-auto">{{ JSON.stringify(part.output, null, 2) }}</pre>
+                <p v-else-if="part.state === 'output-error'" class="px-3 py-2 text-xs text-error border-t border-default">
+                  {{ part.errorText || 'Tool execution failed' }}
+                </p>
+              </div>
             </template>
           </template>
         </UChatMessages>
