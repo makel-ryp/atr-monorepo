@@ -5,18 +5,22 @@
     "apps/*",
     "core",
     "core/docs",
+    "core/control",
     "organization",
     "docs",
+    "control",
     "demos/*",
     "packages/*"
   ],
   "scripts": {
     "dev": "node core/cli/dev.js",
     "dev:apps": "turbo run dev --filter=@app-agent/docs --filter=\"./apps/*\"",
-    "dev:demos": "turbo run dev --filter=@app-agent/docs --filter=\"@app-agent/demo-*\"",
+    "dev:control": "turbo run dev --filter=@app-agent/control",
+    "dev:demos": "turbo run dev --filter=@app-agent/docs --filter=@app-agent/control --filter=\"@app-agent/demo-*\"",
     "dev:docs": "turbo run dev --filter=@app-agent/docs",
     "dev:all": "turbo run dev",
     "build": "turbo run build --filter=\"./apps/*\"",
+    "build:control": "turbo run build --filter=@app-agent/control",
     "build:demos": "turbo run build --filter=\"@app-agent/demo-*\"",
     "build:docs": "turbo run build --filter=@app-agent/docs",
     "build:all": "turbo run build",
@@ -24,17 +28,23 @@
     "test:watch": "vitest",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "enc": "multi-encrypt enc",
+    "dec": "multi-encrypt dec"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2",
     "happy-dom": "^17",
+    "multi-encrypt": "^2.0.0",
     "turbo": "^2.4.0",
     "typescript": "^5.9.3",
     "vitest": "^4",
     "vue-tsc": "^3.2.2"
   },
-  "packageManager": "bun@1.2.15"
+  "packageManager": "bun@1.2.15",
+  "overrides": {
+    "uri-js": "npm:fast-uri@^3.0.0"
+  }
 }

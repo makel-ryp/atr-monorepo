@@ -15,6 +15,22 @@
     "status": {
       "loading": "Chargement...",
       "empty": "Aucun élément trouvé"
+    },
+    "auth": {
+      "login": "Se connecter",
+      "logout": "Se déconnecter",
+      "signup": "S'inscrire",
+      "loginWith": "Se connecter avec {provider}",
+      "welcome": "Bon retour",
+      "createAccount": "Créer un compte",
+      "forgotPassword": "Mot de passe oublié ?",
+      "rememberMe": "Se souvenir de moi",
+      "alreadyHaveAccount": "Vous avez déjà un compte ?",
+      "dontHaveAccount": "Vous n'avez pas de compte ?",
+      "termsPrefix": "En vous connectant, vous acceptez nos",
+      "termsOfService": "Conditions d'utilisation",
+      "unauthorized": "Authentification requise",
+      "forbidden": "Accès refusé"
     }
   }
 }

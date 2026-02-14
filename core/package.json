@@ -9,10 +9,13 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
     "@nuxtjs/i18n": "^9.5.0",
     "@supabase/supabase-js": "^2",
+    "ai": "^6.0.50",
     "better-sqlite3": "^12.6.2",
     "nuxt": "^4.3.0",
+    "nuxt-auth-utils": "^0.5.28",
     "vue": "^3.5.27",
     "vue-router": "^4.6.4"
   },

@@ -25,6 +25,7 @@ Server middleware from ALL layers executes (additive, never overrides).
 
 - `core/app/` — shared components, composables, layouts, plugins (auto-imported)
 - `core/docs/` — documentation app + MCP server (port 3000)
+- `core/control/` — control plane app (port 3001)
 - `core/docs/adr/` — architecture decision records (read before architectural changes)
 - `core/docs/knowledge/` — slug-based feature knowledge (see Feature Knowledge section)
 - `core/server/` — server middleware for cross-cutting concerns
@@ -39,7 +40,8 @@ Server middleware from ALL layers executes (additive, never overrides).
 ```bash
 bun install              # Install dependencies
 bun run dev              # Smart launcher (detects empty apps/, offers setup)
-bun run dev:demos        # Run all demos + docs
+bun run dev:demos        # Run all demos + docs + control
+bun run dev:control      # Control plane only (port 3001)
 bun run dev:docs         # Documentation only (port 3000)
 bun run typecheck        # TypeScript check (disabled during dev server)
 bun run lint             # ESLint
@@ -55,8 +57,28 @@ Build orchestration: Turborepo. TypeScript strict mode is on.
 | Range | Service |
 |-------|---------|
 | 3000 | Documentation + MCP server |
-| 3001–3009 | Customer apps |
+| 3001 | Control plane |
+| 3002–3009 | Customer apps |
 | 3010–3013 | Demos (dashboard, saas, landing, chat) |
+
+## Secrets Management
+
+<!-- SEE: feature "secrets-management" at core/docs/knowledge/secrets-management.md -->
+
+Secret `.env` files are encrypted into `encrypted.json` (committed to git) using `multi-encrypt`.
+
+```bash
+bun run enc              # Encrypt all secret files (interactive password prompt)
+bun run dec              # Decrypt all secret files (interactive password prompt)
+```
+
+**Manifest:** The `# Secrets` section at the bottom of `.gitignore` lists which files to encrypt. To add a new secret file, append its path there and run `bun run enc`.
+
+**Auto-decrypt:** The smart launcher (`bun run dev`) checks for missing secret files on startup. If `encrypted.json` exists but listed `.env` files are missing, it prompts for the password automatically.
+
+**CI/CD:** Store password as `MULTI_ENCRYPT_PASSWORD` GitHub Actions secret. Deploy workflows pipe it via stdin: `echo "$PASSWORD" | bunx multi-encrypt dec`.
+
+**Adding secrets for a new app:** When `copyDemo()` copies a demo that has a `.env`, the launcher warns you to add the new path to `# Secrets` in `.gitignore` and run `bun run enc`.
 
 ## Key Constraints
 
@@ -161,6 +183,41 @@ Hot-reloadable settings with `$meta.lock` governance. Provider-agnostic (Postgre
   - `CORE_DATASOURCE_KEY` — service/admin API key
   - `CORE_DATASOURCE_PROVIDER` — which provider to load (default: `supabase`)
   - `CORE_ENVIRONMENT` — environment identifier (falls back to `NODE_ENV`)
+
+## Authentication
+
+<!-- SEE: feature "authentication" at core/docs/knowledge/authentication.md -->
+
+Opt-in auth using `nuxt-auth-utils` with 3-role RBAC (public/registered/admin).
+
+- **Core provides** types, server utils, middleware, composable, and `CoreUserMenu` component
+- **Apps opt in** by adding `nuxt-auth-utils` to their `modules` array
+- **User table:** `app_agent_users` (namespaced to avoid collision with client backends)
+- **Two modes:** session-only (cookie, no DB) or database-backed (lookup-or-create via `DbAdapter`)
+
+### Server guards (auto-imported)
+
+```typescript
+const user = await requireAuth(event)        // 401 if not logged in
+const admin = await requireRole(event, 'admin') // 403 if not admin
+const user = await getAuthUser(event)         // null if not logged in
+```
+
+### Client composable
+
+```typescript
+const { loggedIn, user, role, isAdmin, login, logout } = useAuth()
+login('github')  // OAuth popup
+```
+
+### OAuth route pattern
+
+Each app defines `server/routes/auth/[provider].get.ts` with a handlers map dispatching to `handleOAuthSuccess()`.
+
+### Env vars
+
+- `NUXT_SESSION_PASSWORD` — session encryption (auto-generated in dev)
+- `NUXT_OAUTH_<PROVIDER>_CLIENT_ID` / `CLIENT_SECRET` — per-provider OAuth credentials
 
 ## Feature Knowledge (MCP) — In Progress
 

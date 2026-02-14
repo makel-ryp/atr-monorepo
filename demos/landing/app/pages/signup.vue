@@ -7,7 +7,7 @@ definePageMeta({
 })
 
 const { auth } = useAppConfig()
-const toast = useToast()
+const { login: authLogin } = useAuth()
 
 const signupConfig = computed(() => auth?.signup ?? {
   title: 'Create an account',
@@ -71,7 +71,7 @@ const providers = computed(() => configProviders.value.map((p: { label: string, 
   label: p.label,
   icon: p.icon,
   onClick: () => {
-    toast.add({ title: p.label, description: `Login with ${p.label}` })
+    authLogin(p.id)
   }
 })))
 

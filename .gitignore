@@ -21,6 +21,7 @@ yarn-error.log*
 .idea/
 .vscode/*
 !.vscode/mcp.json
+!.vscode/settings.json
 *.swp
 *.swo
 
@@ -50,3 +51,20 @@ coverage/
 # Feature knowledge operational databases (rebuildable from source of truth)
 knowledge.db
 logs.db
+
+# Local config service database (SQLite fallback — rebuildable)
+settings.db
+settings.db-wal
+settings.db-shm
+
+# NuxtHub local data
+.data/
+
+# Secrets - Handled by multi-encrypt
+# Files below are encrypted into encrypted.json (committed to repo).
+# After adding a new secret file: bun run enc
+./.env
+./control/.env
+./demos/chat/.env
+./demos/dashboard/.env
+./demos/landing/.env

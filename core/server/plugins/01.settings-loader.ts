@@ -1,12 +1,7 @@
 // SEE: feature "runtime-config" at core/docs/knowledge/runtime-config.md
 export default defineFeaturePlugin('runtime-config', async (feat, nitroApp) => {
   const provider = createConfigProvider()
-
-  if (!provider) {
-    feat.warn('Core datasource not configured — runtime config service disabled')
-    feat.warn('Set CORE_DATASOURCE_URL, CORE_DATASOURCE_KEY, and CORE_DATASOURCE_PROVIDER in .env')
-    return
-  }
+  const providerName = process.env.CORE_DATASOURCE_PROVIDER || (process.env.CORE_DATASOURCE_URL ? 'supabase' : 'sqlite')
 
   // Resolve app identity and environment for subscription filtering
   const appId = useRuntimeConfig().public.serviceId || 'app-agent'
@@ -18,7 +13,7 @@ export default defineFeaturePlugin('runtime-config', async (feat, nitroApp) => {
 
     // Pre-load layers for this app into cache
     const layers = await store.getLayersForApp(appId, environment)
-    feat.log(`Loaded ${layers.length} config layer(s) for ${appId}/${environment} from ${process.env.CORE_DATASOURCE_PROVIDER || 'supabase'} datasource`)
+    feat.log(`Loaded ${layers.length} config layer(s) for ${appId}/${environment} from ${providerName} datasource`)
 
     // Subscribe to realtime changes
     await store.subscribe((event) => {

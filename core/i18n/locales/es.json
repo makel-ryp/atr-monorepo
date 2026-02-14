@@ -15,6 +15,22 @@
     "status": {
       "loading": "Cargando...",
       "empty": "No se encontraron elementos"
+    },
+    "auth": {
+      "login": "Iniciar sesión",
+      "logout": "Cerrar sesión",
+      "signup": "Registrarse",
+      "loginWith": "Iniciar sesión con {provider}",
+      "welcome": "Bienvenido de nuevo",
+      "createAccount": "Crear una cuenta",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "rememberMe": "Recuérdame",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+      "dontHaveAccount": "¿No tienes una cuenta?",
+      "termsPrefix": "Al iniciar sesión, aceptas nuestros",
+      "termsOfService": "Términos de servicio",
+      "unauthorized": "Autenticación requerida",
+      "forbidden": "Acceso denegado"
     }
   }
 }

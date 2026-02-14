@@ -15,6 +15,22 @@
     "status": {
       "loading": "Loading...",
       "empty": "No items found"
+    },
+    "auth": {
+      "login": "Log in",
+      "logout": "Log out",
+      "signup": "Sign up",
+      "loginWith": "Login with {provider}",
+      "welcome": "Welcome back",
+      "createAccount": "Create an account",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Remember me",
+      "alreadyHaveAccount": "Already have an account?",
+      "dontHaveAccount": "Don't have an account?",
+      "termsPrefix": "By signing in, you agree to our",
+      "termsOfService": "Terms of Service",
+      "unauthorized": "Authentication required",
+      "forbidden": "Access denied"
     }
   }
 }

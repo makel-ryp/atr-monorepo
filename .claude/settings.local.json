@@ -162,7 +162,9 @@
       "mcp__app-agent_io__introspect",
       "mcp__app-agent_io__log-summary",
       "mcp__chrome-devtools__new_page",
-      "mcp__chrome-devtools__select_page"
+      "mcp__chrome-devtools__select_page",
+      "mcp__chrome-devtools__get_console_message",
+      "mcp__chrome-devtools__fill_form"
     ]
   },
   "enableAllProjectMcpServers": true,

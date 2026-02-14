@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS feature_edges (
   first_seen TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(from_slug, to_slug, edge_type)
 );
+
+CREATE TABLE IF NOT EXISTS file_mappings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  line_start INTEGER,
+  line_end INTEGER,
+  UNIQUE(slug, file_path, line_start)
+);
 `
 
 export function getFeatureRegistryDb(): InstanceType<typeof Database> | null {
@@ -51,6 +60,61 @@ interface EdgeRecord {
   from: string
   to: string
   type: 'contains' | 'uses'
+}
+
+export function syncSingleFeatureToDb(slug: string, wrapperType: string): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+    conn.prepare(`
+      INSERT INTO feature_registry (slug, wrapper_type)
+      VALUES (?, ?)
+      ON CONFLICT(slug) DO UPDATE SET
+        last_seen = datetime('now')
+    `).run(slug, wrapperType)
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
+}
+
+export function syncSingleEdgeToDb(from: string, to: string, type: string): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+    conn.prepare(`
+      INSERT INTO feature_edges (from_slug, to_slug, edge_type)
+      VALUES (?, ?, ?)
+      ON CONFLICT(from_slug, to_slug, edge_type) DO NOTHING
+    `).run(from, to, type)
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
+}
+
+export function syncCountsToDb(features: { slug: string, invocationCount: number, logCount: number }[]): void {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return
+
+    const update = conn.prepare(`
+      UPDATE feature_registry
+      SET invocation_count = ?, log_count = ?, last_seen = datetime('now')
+      WHERE slug = ?
+    `)
+
+    const transaction = conn.transaction(() => {
+      for (const f of features) {
+        update.run(f.invocationCount, f.logCount, f.slug)
+      }
+    })
+
+    transaction()
+  }
+  catch {
+    // Silent — knowledge.db is optional
+  }
 }
 
 export function syncRegistryToDb(features: FeatureRecord[], edges: EdgeRecord[]): void {
@@ -118,5 +182,77 @@ export function syncFileMappings(annotations: FileMappingRecord[]): void {
   }
   catch {
     // Silent — knowledge.db is optional
+  }
+}
+
+// --- Feature registry read functions (shared across apps) ---
+
+export interface FeatureRegistryRow {
+  slug: string
+  wrapper_type: string
+  first_seen: string
+  last_seen: string
+  invocation_count: number
+  log_count: number
+}
+
+export interface FeatureEdgeRow {
+  from_slug: string
+  to_slug: string
+  edge_type: string
+  first_seen: string
+}
+
+export interface FileMappingRow {
+  slug: string
+  file_path: string
+  line_start: number | null
+  line_end: number | null
+}
+
+export function queryFeatureRegistry(slug?: string): FeatureRegistryRow[] {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return []
+
+    if (slug) {
+      return conn.prepare('SELECT * FROM feature_registry WHERE slug = ?').all(slug) as FeatureRegistryRow[]
+    }
+    return conn.prepare('SELECT * FROM feature_registry ORDER BY slug').all() as FeatureRegistryRow[]
+  }
+  catch {
+    return []
+  }
+}
+
+export function queryFeatureEdges(slug?: string): FeatureEdgeRow[] {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return []
+
+    if (slug) {
+      return conn.prepare(
+        'SELECT * FROM feature_edges WHERE from_slug = ? OR to_slug = ?'
+      ).all(slug, slug) as FeatureEdgeRow[]
+    }
+    return conn.prepare('SELECT * FROM feature_edges ORDER BY from_slug, to_slug').all() as FeatureEdgeRow[]
+  }
+  catch {
+    return []
+  }
+}
+
+export function queryFileMappings(slug?: string): FileMappingRow[] {
+  try {
+    const conn = getFeatureRegistryDb()
+    if (!conn) return []
+
+    if (slug) {
+      return conn.prepare('SELECT * FROM file_mappings WHERE slug = ?').all(slug) as FileMappingRow[]
+    }
+    return conn.prepare('SELECT * FROM file_mappings ORDER BY slug, file_path').all() as FileMappingRow[]
+  }
+  catch {
+    return []
   }
 }

@@ -4,21 +4,7 @@ import { scanProject } from '../utils/see-scanner'
 export default defineFeaturePlugin('feature-registry', async (feat, nitroApp) => {
   if (!import.meta.dev) return
 
-  feat.log('Feature registry persistence active')
-
-  const FLUSH_INTERVAL_MS = 30_000
-
-  function flush() {
-    try {
-      const { features, edges } = getRegistry()
-      if (features.length === 0 && edges.length === 0) return
-      syncRegistryToDb(features, edges)
-      feat.log(`Flushed ${features.length} features, ${edges.length} edges to knowledge.db`)
-    }
-    catch {
-      // Silent — persistence is optional
-    }
-  }
+  feat.log('Feature registry persistence active (write-through)')
 
   // Run SEE scanner on startup
   try {
@@ -37,11 +23,18 @@ export default defineFeaturePlugin('feature-registry', async (feat, nitroApp) =>
     feat.warn('SEE scanner failed — file mappings will not be populated')
   }
 
-  const timer = setInterval(flush, FLUSH_INTERVAL_MS)
-
+  // Features and edges write-through on registration (in feature-registry.ts).
+  // Only invocation/log counts need a final flush — they update too frequently for per-call DB writes.
   nitroApp.hooks.hook('close', () => {
-    clearInterval(timer)
-    flush()
-    feat.log('Final registry flush complete')
+    try {
+      const counts = getCounts()
+      if (counts.length > 0) {
+        syncCountsToDb(counts)
+        feat.log(`Final count flush: ${counts.length} features`)
+      }
+    }
+    catch {
+      // Silent — persistence is optional
+    }
   })
 })
