@@ -68,3 +68,6 @@ settings.db-shm
 ./demos/chat/.env
 ./demos/dashboard/.env
 ./demos/landing/.env
+demos/characters/.data
+demos/dashboard/.data
+apps/companions/.data
