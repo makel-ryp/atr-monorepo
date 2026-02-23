@@ -164,10 +164,15 @@
       "mcp__chrome-devtools__new_page",
       "mcp__chrome-devtools__select_page",
       "mcp__chrome-devtools__get_console_message",
-      "mcp__chrome-devtools__fill_form"
+      "mcp__chrome-devtools__fill_form",
+      "mcp__chrome-devtools__emulate"
     ]
   },
   "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "app-agent.io",
+    "chrome-devtools"
+  ],
   "mcpServers": {
     "chrome-devtools": {
       "command": "npx",

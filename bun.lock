@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "app-agent",
@@ -104,6 +105,35 @@
         "eslint": "^9.39.2",
         "typescript": "^5.9.3",
         "vue-tsc": "^3.2.2",
+      },
+    },
+    "demos/characters": {
+      "name": "@app-agent/demo-characters",
+      "dependencies": {
+        "@ai-sdk/vue": "^3.0.50",
+        "@app-agent/organization": "workspace:*",
+        "@iconify-json/logos": "^1.2.10",
+        "@iconify-json/lucide": "^1.2.87",
+        "@iconify-json/simple-icons": "^1.2.68",
+        "@libsql/client": "^0.17.0",
+        "@nuxt/ui": "^4.4.0",
+        "@nuxthub/core": "^0.10.6",
+        "@vueuse/core": "^14.1.0",
+        "ai": "^6.0.50",
+        "bcryptjs": "^2.4.3",
+        "drizzle-orm": "^0.45.1",
+        "nuxt": "^4.3.0",
+        "nuxt-auth-utils": "^0.5.28",
+        "tailwindcss": "^4.1.18",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@nuxt/eslint": "^1.13.0",
+        "@types/node": "^24.10.9",
+        "drizzle-kit": "^0.31.8",
+        "eslint": "^9.39.2",
+        "typescript": "^5.9.3",
+        "vue-tsc": "^3.2.4",
       },
     },
     "demos/chat": {
@@ -287,6 +317,8 @@
     "@app-agent/control-layer": ["@app-agent/control-layer@workspace:core/control"],
 
     "@app-agent/core": ["@app-agent/core@workspace:core"],
+
+    "@app-agent/demo-characters": ["@app-agent/demo-characters@workspace:demos/characters"],
 
     "@app-agent/demo-chat": ["@app-agent/demo-chat@workspace:demos/chat"],
 
@@ -966,7 +998,7 @@
 
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.0.0-beta.57", "", { "os": "win32", "cpu": "x64" }, "sha512-OqIUyNid1M4xTj6VRXp/Lht/qIP8fo25QyAZlCP+p6D2ATCEhyW4ZIFLnC9zAGN/HMbXoCzvwfa8Jjg/8J4YEg=="],
 
-    "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.57", "", {}, "sha512-aQNelgx14tGA+n2tNSa9x6/jeoCL9fkDeCei7nOKnHx0fEFRRMu5ReiITo+zZD5TzWDGGRjbSYCs93IfRIyTuQ=="],
+    "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.2", "", {}, "sha512-izyXV/v+cHiRfozX62W9htOAvwMo4/bXKDrQ+vom1L1qRuexPock/7VZDAhnpHCLNejd3NJ6hiab+tO0D44Rgw=="],
 
     "@rollup/plugin-alias": ["@rollup/plugin-alias@6.0.0", "", { "peerDependencies": { "rollup": ">=4.0.0" }, "optionalPeers": ["rollup"] }, "sha512-tPCzJOtS7uuVZd+xPhoy5W4vThe6KWXNmsFCNktaAh5RTqcLiSfT4huPQIXkgJ6YCOjJHvecOAzQxLFhPxKr+g=="],
 
@@ -1581,6 +1613,8 @@
     "base64-js": ["base64-js@0.0.8", "", {}, "sha512-3XSA2cR/h/73EzlXXdU6YNycmYI7+kicTxks4eJg2g39biHR84slg2+des+p7iHYhbRg/udIS4TD53WabcOUkw=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.9.19", "", { "bin": { "baseline-browser-mapping": "dist/cli.js" } }, "sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg=="],
+
+    "bcryptjs": ["bcryptjs@2.4.3", "", {}, "sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ=="],
 
     "better-sqlite3": ["better-sqlite3@12.6.2", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-8VYKM3MjCa9WcaSAI3hzwhmyHVlH8tiGFwf0RlTsZPWJ1I5MkzjiudCo4KC4DxOaL/53A5B1sI/IbldNFDbsKA=="],
 
@@ -3812,10 +3846,6 @@
 
     "@vercel/nft/resolve-from": ["resolve-from@5.0.0", "", {}, "sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw=="],
 
-    "@vitejs/plugin-vue/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.2", "", {}, "sha512-izyXV/v+cHiRfozX62W9htOAvwMo4/bXKDrQ+vom1L1qRuexPock/7VZDAhnpHCLNejd3NJ6hiab+tO0D44Rgw=="],
-
-    "@vitejs/plugin-vue-jsx/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.2", "", {}, "sha512-izyXV/v+cHiRfozX62W9htOAvwMo4/bXKDrQ+vom1L1qRuexPock/7VZDAhnpHCLNejd3NJ6hiab+tO0D44Rgw=="],
-
     "@vue/compiler-core/estree-walker": ["estree-walker@2.0.2", "", {}, "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="],
 
     "@vue/compiler-sfc/estree-walker": ["estree-walker@2.0.2", "", {}, "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="],
@@ -4003,6 +4033,8 @@
     "restore-cursor/signal-exit": ["signal-exit@3.0.7", "", {}, "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ=="],
 
     "rolldown/@oxc-project/types": ["@oxc-project/types@0.103.0", "", {}, "sha512-bkiYX5kaXWwUessFRSoXFkGIQTmc6dLGdxuRTrC+h8PSnIdZyuXHHlLAeTmOue5Br/a0/a7dHH0Gca6eXn9MKg=="],
+
+    "rolldown/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.57", "", {}, "sha512-aQNelgx14tGA+n2tNSa9x6/jeoCL9fkDeCei7nOKnHx0fEFRRMu5ReiITo+zZD5TzWDGGRjbSYCs93IfRIyTuQ=="],
 
     "rolldown-plugin-dts/birpc": ["birpc@4.0.0", "", {}, "sha512-LShSxJP0KTmd101b6DRyGBj57LZxSDYWKitQNW/mi8GRMvZb078Uf9+pveax1DrVL89vm7mWe+TovdI/UDOuPw=="],
 

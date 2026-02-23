@@ -43,7 +43,28 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
         appConfig.ui.colors.primary = color
       }
     }))
-  }, {
+  },
+  ...(appConfig.ui.colors.secondary ? [{
+    label: 'Secondary',
+    slot: 'chip' as const,
+    chip: appConfig.ui.colors.secondary,
+    content: {
+      align: 'center' as const,
+      collisionPadding: 16
+    },
+    children: colors.map(color => ({
+      label: color,
+      chip: color,
+      slot: 'chip' as const,
+      checked: appConfig.ui.colors.secondary === color,
+      type: 'checkbox' as const,
+      onSelect: (e: Event) => {
+        e.preventDefault()
+        appConfig.ui.colors.secondary = color
+      }
+    }))
+  }] : []),
+  {
     label: 'Neutral',
     slot: 'chip',
     chip: appConfig.ui.colors.neutral === 'neutral' ? 'old-neutral' : appConfig.ui.colors.neutral,

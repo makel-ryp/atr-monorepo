@@ -6,11 +6,9 @@
     },
     "chrome-devtools": {
       "type": "stdio",
-      "command": "cmd",
+      "command": "bun",
       "args": [
-        "/c",
-        "npx",
-        "chrome-devtools-mcp@latest"
+        "scripts/mcp-chrome-devtools.mjs"
       ],
       "env": {}
     }

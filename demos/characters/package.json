@@ -1,0 +1,42 @@
+{
+  "name": "@app-agent/demo-characters",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 3014",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "db:generate": "nuxt db generate",
+    "db:migrate": "nuxt db migrate",
+    "clean": "rm -rf .nuxt .output node_modules"
+  },
+  "dependencies": {
+    "@app-agent/organization": "workspace:*",
+    "@ai-sdk/vue": "^3.0.50",
+    "ai": "^6.0.50",
+    "@iconify-json/logos": "^1.2.10",
+    "@iconify-json/lucide": "^1.2.87",
+    "@iconify-json/simple-icons": "^1.2.68",
+    "bcryptjs": "^2.4.3",
+    "@libsql/client": "^0.17.0",
+    "@nuxt/ui": "^4.4.0",
+    "@nuxthub/core": "^0.10.6",
+    "@vueuse/core": "^14.1.0",
+    "drizzle-orm": "^0.45.1",
+    "nuxt": "^4.3.0",
+    "nuxt-auth-utils": "^0.5.28",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.13.0",
+    "@types/node": "^24.10.9",
+    "drizzle-kit": "^0.31.8",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.4"
+  }
+}
