@@ -37,7 +37,7 @@ const maskClass = computed(() => {
     <!-- Header -->
     <div class="flex items-center gap-3 mb-4">
       <h2 class="text-xl sm:text-2xl font-bold">
-        <span class="text-pink-500">Jump into</span>
+        <span class="text-secondary-500">Jump into</span>
       </h2>
       <span class="px-3 py-0.5 rounded border border-white/20 text-sm font-bold text-white">LIVE</span>
       <span class="text-sm font-bold text-white/80">ACTION</span>
@@ -78,7 +78,7 @@ const maskClass = computed(() => {
             <!-- Bottom info -->
             <div class="absolute bottom-0 inset-x-0 p-3">
               <p class="font-bold text-white text-sm">{{ char.name }} <span class="font-normal text-white/70">{{ char.age }}</span></p>
-              <button class="mt-1.5 flex items-center gap-1 px-3 py-1 rounded-full bg-purple-600/80 hover:bg-purple-500 text-[11px] font-medium text-white transition-colors">
+              <button class="mt-1.5 flex items-center gap-1 px-3 py-1 rounded-full bg-primary-600/80 hover:bg-primary-500 text-[11px] font-medium text-white transition-colors">
                 <UIcon name="i-lucide-gamepad-2" class="size-3" />
                 Play with me
               </button>

@@ -7,7 +7,7 @@ const activeTag = ref('All')
 const tags = ['All', 'Brunette', 'Blonde', 'Redhead', 'Asian', 'Latina', 'Creative', 'Athletic', 'Alternative']
 
 const filtered = computed(() => {
-  let result = [...characters]
+  let result = [...characters.value]
 
   const q = search.value.trim().toLowerCase()
   if (q) {
@@ -31,7 +31,7 @@ const filtered = computed(() => {
   <div>
     <!-- Header -->
     <h2 class="text-xl sm:text-2xl font-bold mb-4">
-      <span class="text-pink-500">AI</span> Characters
+      <span class="text-secondary-500">AI</span> Characters
     </h2>
 
     <!-- Search + filter tags -->
@@ -50,7 +50,7 @@ const filtered = computed(() => {
         :key="tag"
         class="shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors"
         :class="activeTag === tag
-          ? 'bg-purple-600 text-white'
+          ? 'bg-primary-600 text-white'
           : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white'"
         @click="activeTag = tag"
       >
@@ -92,13 +92,13 @@ const filtered = computed(() => {
 
           <!-- Action buttons -->
           <div class="flex items-center gap-1.5 mt-2">
-            <button class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-600/80 hover:bg-purple-500 text-[10px] font-medium text-white transition-colors">
+            <button class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-600/80 hover:bg-primary-500 text-[10px] font-medium text-white transition-colors">
               <UIcon name="i-lucide-gamepad-2" class="size-3" />
               Play
             </button>
             <button
               v-if="char.hasAudio"
-              class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-600/80 hover:bg-pink-500 text-[10px] font-medium text-white transition-colors"
+              class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-600/80 hover:bg-secondary-500 text-[10px] font-medium text-white transition-colors"
             >
               <UIcon name="i-lucide-headphones" class="size-3" />
               Audio

@@ -2,43 +2,21 @@
 const { characters } = useCharacters()
 const route = useRoute()
 
-// Support navigating here with ?character=<id> from the homepage
-const initialId = (route.query.character as string) || characters[0].id
-const activeCharacterId = ref(characters.some(c => c.id === initialId) ? initialId : characters[0].id)
+// Active chat and character state
+const activeChatId = ref<string | null>(null)
+const activeCharacterId = ref<string | null>(null)
+
 const character = computed(() =>
-  characters.find(c => c.id === activeCharacterId.value) || characters[0]
+  activeCharacterId.value
+    ? characters.value.find(c => c.id === activeCharacterId.value) || null
+    : null
 )
 
-function selectChat(characterId: string) {
-  activeCharacterId.value = characterId
-  // Reset messages for the newly selected character
-  const selected = characters.find(c => c.id === characterId) || characters[0]
-  messages.value = [{
-    id: crypto.randomUUID(),
-    role: 'assistant' as const,
-    text: `Hey there! I'm ${selected.name}. ${selected.description} What would you like to talk about?`,
-    timestamp: new Date(Date.now() - 60000)
-  }]
-  scrollToBottom()
-}
+// Chat list — owned here, shared with sidebar via props
+const { chats, refresh: refreshChats } = useChatList()
 
-interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  text: string
-  image?: string
-  timestamp: Date
-}
-
-const initialCharacter = characters.find(c => c.id === activeCharacterId.value) || characters[0]
-const messages = ref<ChatMessage[]>([
-  {
-    id: '1',
-    role: 'assistant',
-    text: `Hey there! I'm ${initialCharacter.name}. ${initialCharacter.description} What would you like to talk about?`,
-    timestamp: new Date(Date.now() - 60000)
-  }
-])
+// Chat composable — streams AI responses
+const { messages, isLoading, sendMessage, error } = useCharacterChat(activeChatId)
 
 const input = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
@@ -55,48 +33,82 @@ function scrollToBottom() {
   })
 }
 
+// Auto-scroll when messages change
+watch(messages, () => scrollToBottom(), { deep: true })
+
+// Select an existing chat from the sidebar
+async function selectChat(chatId: string, characterId: string) {
+  activeChatId.value = chatId
+  activeCharacterId.value = characterId
+  scrollToBottom()
+}
+
+// Start a new chat with a character (from ?character= param or direct)
+async function startChat(characterId: string) {
+  activeCharacterId.value = characterId
+  try {
+    const chat = await createOrGetChat(characterId)
+    activeChatId.value = chat.id
+    await refreshChats()
+    scrollToBottom()
+  }
+  catch (err: any) {
+    console.error('Failed to create chat:', err)
+  }
+}
+
+// Reactive ?character= handler — works on initial load and in-page navigation
+watch(
+  () => route.query.character as string | undefined,
+  async (characterId) => {
+    if (!characterId) return
+    // Wait for characters data to be available
+    if (characters.value.length === 0) {
+      await new Promise<void>((resolve) => {
+        const stop = watch(characters, (chars) => {
+          if (chars.length > 0) {
+            stop()
+            resolve()
+          }
+        }, { immediate: true })
+      })
+    }
+    const found = characters.value.find(c => c.id === characterId)
+    if (found) {
+      await startChat(found.id)
+    }
+  },
+  { immediate: true }
+)
+
+// Auto-select latest chat when entering bare /chat (no ?character= param)
+watch(chats, (chatList) => {
+  if (activeChatId.value || route.query.character) return
+  if (chatList.length > 0) {
+    selectChat(chatList[0].id, chatList[0].characterId)
+  }
+}, { immediate: true })
+
 const quickActions = [
   'Tell me about yourself',
-  'What are your hobbies?',
-  'Send me a photo'
+  'What are your hobbies?'
 ]
 
-function sendMessage(text?: string) {
+const hasUserMessage = computed(() => messages.value.some(m => m.role === 'user'))
+
+async function handleSendMessage(text?: string) {
   const msg = text || input.value.trim()
   if (!msg) return
-
-  messages.value.push({
-    id: crypto.randomUUID(),
-    role: 'user',
-    text: msg,
-    timestamp: new Date()
-  })
-
   input.value = ''
+  await sendMessage(msg)
   scrollToBottom()
-
-  // Simulate assistant reply
-  setTimeout(() => {
-    const replies = [
-      "That's really sweet of you to say! I'd love to hear more about what's on your mind.",
-      "Hmm, interesting question! Let me think about that for a moment...",
-      "I love that you asked! It's one of my favorite topics to talk about.",
-      "You always know how to make me smile! Tell me more.",
-      "Oh, I have so many thoughts on that! Where do I even start?"
-    ]
-    messages.value.push({
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      text: replies[Math.floor(Math.random() * replies.length)],
-      timestamp: new Date()
-    })
-    scrollToBottom()
-  }, 800 + Math.random() * 1200)
+  // Refresh sidebar to update last message
+  await refreshChats()
 }
 
 function handleSubmit(e: Event) {
   e.preventDefault()
-  sendMessage()
+  handleSendMessage()
 }
 
 const toast = useToast()
@@ -107,8 +119,14 @@ function comingSoon() {
 
 const profileOpen = ref(true)
 
+function resetChat() {
+  if (activeCharacterId.value) {
+    startChat(activeCharacterId.value)
+  }
+}
+
 const menuItems = [[
-  { label: 'Reset chat', icon: 'i-lucide-rotate-ccw', click: () => selectChat(activeCharacterId.value) },
+  { label: 'Reset chat', icon: 'i-lucide-rotate-ccw', click: resetChat },
   { label: 'Delete chat', icon: 'i-lucide-trash-2', click: comingSoon }
 ]]
 
@@ -120,8 +138,8 @@ if (route.query.character) {
   mobileView.value = 'chat'
 }
 
-function mobileSelectChat(characterId: string) {
-  selectChat(characterId)
+function mobileSelectChat(chatId: string, characterId: string) {
+  selectChat(chatId, characterId)
   mobileView.value = 'chat'
 }
 
@@ -139,12 +157,10 @@ function mobileBackToList() {
 
 onMounted(scrollToBottom)
 
-// Custom resize for profile panel (left-edge handle).
-// We inject a <style> rule to override the panel's --width because Vue's
-// reactive style binding replaces inline styles on re-render.
-const profileWidth = ref(24) // rem
+// Custom resize for profile panel
+const profileWidth = ref(24)
 const isResizingProfile = ref(false)
-const profileResized = ref(false) // true once user has dragged
+const profileResized = ref(false)
 const minProfileWidth = 18
 const maxProfileWidth = 30
 
@@ -177,7 +193,6 @@ function startProfileResize(e: MouseEvent) {
   const remSize = getRemSize()
 
   function onMouseMove(ev: MouseEvent) {
-    // Dragging left = increase width, dragging right = decrease width
     const deltaPx = startX - ev.clientX
     const deltaRem = deltaPx / remSize
     const newWidth = Math.min(maxProfileWidth, Math.max(minProfileWidth, startWidth + deltaRem))
@@ -208,70 +223,88 @@ function startProfileResize(e: MouseEvent) {
     class="hidden md:flex"
   >
     <template #body>
-      <ChatSidebar :active-id="activeCharacterId" @select="selectChat" />
+      <ChatSidebar :chats="chats" :active-id="activeChatId || ''" @select="selectChat" />
     </template>
   </UDashboardPanel>
 
   <UDashboardPanel id="chat" :ui="{ body: 'p-0 sm:p-0' }" class="hidden md:flex">
     <template #body>
       <div class="chat-page">
-        <PageTopbar>
-          <template #left>
-            <img
-              :src="character.avatar"
-              :alt="character.name"
-              class="chat-topbar__avatar"
-            >
-            <span class="chat-topbar__name">{{ character.name }}</span>
-          </template>
-          <template #right>
-            <button class="chat-topbar__btn chat-topbar__btn--phone" @click="comingSoon">
-              <UIcon name="i-lucide-phone" class="size-5" />
-            </button>
-            <UDropdownMenu :items="menuItems">
-              <button class="chat-topbar__btn">
-                <UIcon name="i-lucide-ellipsis-vertical" class="size-5" />
-              </button>
-            </UDropdownMenu>
-            <button class="chat-topbar__btn" @click="profileOpen = !profileOpen">
-              <UIcon :name="profileOpen ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'" class="size-5" />
-            </button>
-          </template>
-        </PageTopbar>
-
-        <div ref="chatContainer" class="chat-messages">
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            class="chat-msg"
-            :class="msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--assistant'"
-          >
-            <div v-if="msg.image" class="chat-msg__image">
-              <img :src="msg.image" :alt="'Image from ' + (msg.role === 'assistant' ? character.name : 'you')">
-            </div>
-            <div class="chat-bubble" :class="msg.role === 'user' ? 'chat-bubble--user' : 'chat-bubble--assistant'">
-              {{ msg.text }}
-            </div>
-            <div class="chat-msg__meta">
-              <img v-if="msg.role === 'assistant'" :src="character.avatar" :alt="character.name" class="chat-msg__meta-avatar">
-              <span class="chat-msg__time">{{ formatTime(msg.timestamp) }}</span>
+        <!-- No active chat state -->
+        <template v-if="!character">
+          <div class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+              <UIcon name="i-lucide-message-circle" class="size-12 text-white/20 mx-auto mb-3" />
+              <p class="text-white/50 text-sm">Select a character to start chatting</p>
             </div>
           </div>
-        </div>
+        </template>
 
-        <div class="chat-quick-actions">
-          <button v-for="action in quickActions" :key="action" class="quick-action" @click="sendMessage(action)">
-            {{ action }}
-          </button>
-        </div>
+        <!-- Active chat -->
+        <template v-else>
+          <PageTopbar>
+            <template #left>
+              <img
+                :src="character.avatar"
+                :alt="character.name"
+                class="chat-topbar__avatar"
+              >
+              <span class="chat-topbar__name">{{ character.name }}</span>
+            </template>
+            <template #right>
+              <button class="chat-topbar__btn chat-topbar__btn--phone" @click="comingSoon">
+                <UIcon name="i-lucide-phone" class="size-5" />
+              </button>
+              <UDropdownMenu :items="menuItems">
+                <button class="chat-topbar__btn">
+                  <UIcon name="i-lucide-ellipsis-vertical" class="size-5" />
+                </button>
+              </UDropdownMenu>
+              <button class="chat-topbar__btn" @click="profileOpen = !profileOpen">
+                <UIcon :name="profileOpen ? 'i-lucide-panel-right-close' : 'i-lucide-panel-right-open'" class="size-5" />
+              </button>
+            </template>
+          </PageTopbar>
 
-        <ChatInputBar v-model="input" @submit="handleSubmit" @coming-soon="comingSoon" />
+          <div ref="chatContainer" class="chat-messages">
+            <div
+              v-for="msg in messages"
+              :key="msg.id"
+              class="chat-msg"
+              :class="msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--assistant'"
+            >
+              <div class="chat-bubble" :class="msg.role === 'user' ? 'chat-bubble--user' : 'chat-bubble--assistant'">
+                <span v-if="msg.text" v-html="renderInlineMarkdown(msg.text)" />
+                <span v-else-if="msg.role === 'assistant' && isLoading" class="animate-pulse">Typing...</span>
+              </div>
+              <div v-if="msg.text || msg.role === 'user'" class="chat-msg__meta">
+                <img v-if="msg.role === 'assistant'" :src="character.avatar" :alt="character.name" class="chat-msg__meta-avatar">
+                <span class="chat-msg__time">{{ formatTime(msg.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error display -->
+          <div v-if="error" class="px-4 md:px-8 pb-2">
+            <div class="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">
+              {{ error }}
+            </div>
+          </div>
+
+          <div v-if="!hasUserMessage" class="chat-quick-actions">
+            <button v-for="action in quickActions" :key="action" class="quick-action" @click="handleSendMessage(action)">
+              {{ action }}
+            </button>
+          </div>
+
+          <ChatInputBar v-model="input" :disabled="isLoading" @submit="handleSubmit" @coming-soon="comingSoon" />
+        </template>
       </div>
     </template>
   </UDashboardPanel>
 
   <UDashboardPanel
-    v-if="profileOpen"
+    v-if="profileOpen && character"
     id="chat-profile"
     :default-size="24"
     :ui="{ body: 'p-0 sm:p-0' }"
@@ -295,57 +328,68 @@ function startProfileResize(e: MouseEvent) {
     <template #body>
       <!-- Mobile: Chat list -->
       <div v-if="mobileView === 'list'" class="chat-page">
-        <ChatSidebar :active-id="activeCharacterId" @select="mobileSelectChat" />
+        <ChatSidebar :chats="chats" :active-id="activeChatId || ''" @select="mobileSelectChat" />
       </div>
 
       <!-- Mobile: Chat conversation -->
       <div v-else-if="mobileView === 'chat'" class="chat-page">
-        <PageTopbar>
-          <template #left>
-            <button class="chat-topbar__btn" @click="mobileBackToList">
-              <UIcon name="i-lucide-arrow-left" class="size-5" />
-            </button>
-            <button class="flex items-center gap-2 min-w-0" @click="mobileShowProfile">
-              <img :src="character.avatar" :alt="character.name" class="chat-topbar__avatar !size-9">
-              <span class="chat-topbar__name">{{ character.name }}</span>
-            </button>
-          </template>
-          <template #right>
-            <UDropdownMenu :items="menuItems">
-              <button class="chat-topbar__btn">
-                <UIcon name="i-lucide-ellipsis-vertical" class="size-5" />
+        <template v-if="character">
+          <PageTopbar>
+            <template #left>
+              <button class="chat-topbar__btn" @click="mobileBackToList">
+                <UIcon name="i-lucide-arrow-left" class="size-5" />
               </button>
-            </UDropdownMenu>
-          </template>
-        </PageTopbar>
+              <button class="flex items-center gap-2 min-w-0" @click="mobileShowProfile">
+                <img :src="character.avatar" :alt="character.name" class="chat-topbar__avatar !size-9">
+                <span class="chat-topbar__name">{{ character.name }}</span>
+              </button>
+            </template>
+            <template #right>
+              <UDropdownMenu :items="menuItems">
+                <button class="chat-topbar__btn">
+                  <UIcon name="i-lucide-ellipsis-vertical" class="size-5" />
+                </button>
+              </UDropdownMenu>
+            </template>
+          </PageTopbar>
 
-        <div ref="chatContainer" class="chat-messages">
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            class="chat-msg"
-            :class="msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--assistant'"
-          >
-            <div v-if="msg.image" class="chat-msg__image">
-              <img :src="msg.image" :alt="'Image from ' + (msg.role === 'assistant' ? character.name : 'you')">
-            </div>
-            <div class="chat-bubble" :class="msg.role === 'user' ? 'chat-bubble--user' : 'chat-bubble--assistant'">
-              {{ msg.text }}
-            </div>
-            <div class="chat-msg__meta">
-              <img v-if="msg.role === 'assistant'" :src="character.avatar" :alt="character.name" class="chat-msg__meta-avatar">
-              <span class="chat-msg__time">{{ formatTime(msg.timestamp) }}</span>
+          <div ref="chatContainer" class="chat-messages">
+            <div
+              v-for="msg in messages"
+              :key="msg.id"
+              class="chat-msg"
+              :class="msg.role === 'user' ? 'chat-msg--user' : 'chat-msg--assistant'"
+            >
+              <div class="chat-bubble" :class="msg.role === 'user' ? 'chat-bubble--user' : 'chat-bubble--assistant'">
+                <span v-if="msg.text" v-html="renderInlineMarkdown(msg.text)" />
+                <span v-else-if="msg.role === 'assistant' && isLoading" class="animate-pulse">Typing...</span>
+              </div>
+              <div v-if="msg.text || msg.role === 'user'" class="chat-msg__meta">
+                <img v-if="msg.role === 'assistant'" :src="character.avatar" :alt="character.name" class="chat-msg__meta-avatar">
+                <span class="chat-msg__time">{{ formatTime(msg.createdAt) }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="chat-quick-actions">
-          <button v-for="action in quickActions" :key="action" class="quick-action" @click="sendMessage(action)">
-            {{ action }}
-          </button>
-        </div>
+          <div v-if="error" class="px-4 pb-2">
+            <div class="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">
+              {{ error }}
+            </div>
+          </div>
 
-        <ChatInputBar v-model="input" @submit="handleSubmit" @coming-soon="comingSoon" />
+          <div v-if="!hasUserMessage" class="chat-quick-actions">
+            <button v-for="action in quickActions" :key="action" class="quick-action" @click="handleSendMessage(action)">
+              {{ action }}
+            </button>
+          </div>
+
+          <ChatInputBar v-model="input" :disabled="isLoading" @submit="handleSubmit" @coming-soon="comingSoon" />
+        </template>
+        <template v-else>
+          <div class="flex-1 flex items-center justify-center">
+            <p class="text-white/50 text-sm">Select a character to start chatting</p>
+          </div>
+        </template>
       </div>
 
       <!-- Mobile: Profile overlay -->
@@ -355,11 +399,11 @@ function startProfileResize(e: MouseEvent) {
             <button class="chat-topbar__btn" @click="mobileBackToChat">
               <UIcon name="i-lucide-arrow-left" class="size-5" />
             </button>
-            <span class="chat-topbar__name">{{ character.name }}</span>
+            <span class="chat-topbar__name">{{ character?.name }}</span>
           </template>
         </PageTopbar>
         <div class="flex-1 overflow-y-auto">
-          <ChatProfilePanel :character="character" @coming-soon="comingSoon" />
+          <ChatProfilePanel v-if="character" :character="character" @coming-soon="comingSoon" />
         </div>
       </div>
     </template>
@@ -449,18 +493,6 @@ function startProfileResize(e: MouseEvent) {
   align-items: flex-start;
 }
 
-.chat-msg__image {
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-  max-width: 240px;
-  border-radius: 0.75rem !important;
-}
-
-.chat-msg__image img {
-  width: 100%;
-  display: block;
-}
-
 /* Chat bubbles */
 .chat-bubble {
   max-width: 75%;
@@ -468,10 +500,22 @@ function startProfileResize(e: MouseEvent) {
   font-size: 0.9375rem;
   line-height: 1.6;
   border-radius: 1.25rem !important;
+  white-space: pre-wrap;
+}
+
+.chat-bubble :deep(code) {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.chat-bubble :deep(del) {
+  opacity: 0.6;
 }
 
 .chat-bubble--user {
-  background: rgb(147, 51, 234) !important;
+  background: var(--color-primary-600) !important;
   color: white !important;
   border-bottom-right-radius: 0.375rem !important;
 }
@@ -504,7 +548,7 @@ function startProfileResize(e: MouseEvent) {
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* Quick actions — stacked on mobile, horizontal on desktop */
+/* Quick actions */
 .chat-quick-actions {
   flex-shrink: 0;
   padding: 0 1rem 0.375rem;
@@ -531,23 +575,18 @@ function startProfileResize(e: MouseEvent) {
   flex-shrink: 0;
   padding: 0.375rem 1rem;
   font-size: 0.8125rem;
-  color: rgb(196, 181, 253);
+  color: var(--color-primary-300);
   border-radius: 9999px !important;
-  border: 1px solid rgba(147, 51, 234, 0.5);
+  border: 1px solid color-mix(in oklch, var(--color-primary-600) 50%, transparent);
   transition: all 0.15s;
   text-align: center;
 }
 
 .quick-action:hover {
-  background: rgba(147, 51, 234, 0.1);
+  background: color-mix(in oklch, var(--color-primary-600) 10%, transparent);
 }
 
-/* Profile panel uses defaultSize for proper flex/width classes.
-   During drag, we set --width with !important to override useResizable's binding. */
-
-/* Custom left-edge resize handle for profile panel.
-   The slot renders as a sibling of the panel inside the fixed group container,
-   so we use absolute positioning with a dynamic `right` value. */
+/* Profile resize handle */
 .profile-resize-handle {
   position: absolute;
   top: 0;
@@ -559,7 +598,6 @@ function startProfileResize(e: MouseEvent) {
   z-index: 10;
 }
 
-/* Clickable area via pseudo-element — symmetric 3px each side (6px total) */
 .profile-resize-handle::before {
   content: '';
   position: absolute;

@@ -5,16 +5,17 @@ const currentIndex = ref(0)
 const transitioning = ref(false)
 const direction = ref<'up' | 'down'>('up')
 
-// Shuffle characters on mount
+// Shuffle characters once they're available
 const shuffled = ref<typeof characters.value>([])
-onMounted(() => {
-  const arr = [...characters]
+watch(characters, (chars) => {
+  if (shuffled.value.length > 0 || chars.length === 0) return
+  const arr = [...chars]
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   shuffled.value = arr
-})
+}, { immediate: true })
 
 const currentChar = computed(() => shuffled.value[currentIndex.value])
 const hasNext = computed(() => currentIndex.value < shuffled.value.length - 1)
@@ -119,13 +120,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                 <UIcon name="i-lucide-zap" class="size-3.5" />
                 New
               </div>
-              <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/80 text-xs font-medium text-white">
+              <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-500/80 text-xs font-medium text-white">
                 <UIcon name="i-lucide-gamepad-2" class="size-3" />
                 Play
               </div>
               <div
                 v-if="currentChar.hasAudio"
-                class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-500/80 text-xs font-medium text-white"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-500/80 text-xs font-medium text-white"
               >
                 <UIcon name="i-lucide-headphones" class="size-3" />
                 Audio
@@ -152,7 +153,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                 </h1>
                 <NuxtLink
                   :to="`/chat?character=${currentChar.id}`"
-                  class="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-sm font-semibold text-white transition-colors active:scale-95 shrink-0"
+                  class="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary-600 hover:bg-primary-500 text-sm font-semibold text-white transition-colors active:scale-95 shrink-0"
                 >
                   <UIcon name="i-lucide-message-circle" class="size-4" />
                   Chat

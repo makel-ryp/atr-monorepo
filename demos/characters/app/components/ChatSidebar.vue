@@ -2,43 +2,42 @@
 const { characters } = useCharacters()
 
 const props = defineProps<{
+  chats: ChatListItem[]
   activeId?: string
 }>()
 
 const emit = defineEmits<{
-  select: [characterId: string]
+  select: [chatId: string, characterId: string]
+  newChat: [characterId: string]
 }>()
 
 const search = ref('')
 
-// Generate mock recent chats from a subset of characters
-const recentChats = computed(() => {
-  const lastMessages = [
-    'Hey there, sweet thing! Looking forward to chatting with you today.',
-    'Initialising obedience protocol… just kidding! How are you?',
-    'Are you my new intern? If so, welcome aboard! Let me show you around.',
-    'OMG, you\'re real! I can\'t believe we\'re finally talking. This is so exciting!',
-    'Show me a selfie, gentle stranger. I want to see who I\'m talking to!',
-    'Well… your Craigslist post was interesting. Tell me more about yourself.',
-    'I love that you asked! It\'s one of my favorite things to talk about.',
-    'You always know how to make me smile. Tell me something fun!',
-  ]
-  const times = ['3:12PM', '3:10PM', '3:09PM', '3:05PM', '4:22PM', '4:16PM', '2:45PM', '1:30PM']
-
-  return characters.slice(0, 3).map((c, i) => ({
-    ...c,
-    lastMessage: lastMessages[i] || 'Start a conversation…',
-    lastTime: times[i] || '12:00PM',
-  }))
+// Merge chat list with character data, adding avatar fallback
+const chatItems = computed(() => {
+  return props.chats.map(chat => {
+    const character = characters.value.find(c => c.id === chat.characterId)
+    return {
+      ...chat,
+      characterAvatar: chat.characterAvatar || (character?.avatar ?? ''),
+      characterName: chat.characterName || (character?.name ?? 'Unknown')
+    }
+  })
 })
 
 const filteredChats = computed(() => {
-  if (!search.value.trim()) return recentChats.value
+  if (!search.value.trim()) return chatItems.value
   const q = search.value.toLowerCase()
-  return recentChats.value.filter(c =>
-    c.name.toLowerCase().includes(q)
+  return chatItems.value.filter(c =>
+    c.characterName.toLowerCase().includes(q)
   )
 })
+
+function formatTime(dateStr: string | Date): string {
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
 </script>
 
 <template>
@@ -59,24 +58,28 @@ const filteredChats = computed(() => {
 
     <!-- Chat list -->
     <div class="chat-sidebar__list">
+      <div v-if="filteredChats.length === 0" class="px-4 py-8 text-center">
+        <p class="text-sm text-white/40">No conversations yet</p>
+        <p class="text-xs text-white/30 mt-1">Select a character to start chatting</p>
+      </div>
       <button
         v-for="chat in filteredChats"
         :key="chat.id"
         class="chat-sidebar__item"
         :class="{ 'chat-sidebar__item--active': activeId === chat.id }"
-        @click="emit('select', chat.id)"
+        @click="emit('select', chat.id, chat.characterId)"
       >
         <img
-          :src="chat.avatar"
-          :alt="chat.name"
+          :src="chat.characterAvatar"
+          :alt="chat.characterName"
           class="chat-sidebar__avatar"
         >
         <div class="chat-sidebar__info">
           <div class="chat-sidebar__row">
-            <span class="chat-sidebar__name">{{ chat.name }}</span>
-            <span class="chat-sidebar__time">{{ chat.lastTime }}</span>
+            <span class="chat-sidebar__name">{{ chat.characterName }}</span>
+            <span class="chat-sidebar__time">{{ formatTime(chat.lastMessageAt) }}</span>
           </div>
-          <p class="chat-sidebar__message">{{ chat.lastMessage }}</p>
+          <p class="chat-sidebar__message">{{ chat.lastMessage || 'Start a conversation…' }}</p>
         </div>
       </button>
     </div>

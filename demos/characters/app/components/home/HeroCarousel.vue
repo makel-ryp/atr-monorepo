@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const currentSlide = ref(0)
 const slides = [
-  { id: 1, title: 'Image Generator', subtitle: 'Create the perfect image in seconds', cta: 'Generate Now', accent: 'Choose your setting, poses, and actions', gradient: 'from-purple-900/80 via-pink-900/60 to-transparent' },
+  { id: 1, title: 'Image Generator', subtitle: 'Create the perfect image in seconds', cta: 'Generate Now', accent: 'Choose your setting, poses, and actions', gradient: 'from-primary-900/80 via-secondary-900/60 to-transparent' },
   { id: 2, title: 'New Characters', subtitle: 'Discover fresh personalities weekly', cta: 'Explore', accent: 'Unique stories and conversations await', gradient: 'from-blue-900/80 via-indigo-900/60 to-transparent' },
   { id: 3, title: 'Audio Chat', subtitle: 'Hear your characters come to life', cta: 'Try Now', accent: 'Realistic voice conversations', gradient: 'from-emerald-900/80 via-teal-900/60 to-transparent' },
   { id: 4, title: 'Create Your Own', subtitle: 'Build a character from scratch', cta: 'Start Creating', accent: 'Full customization and personality design', gradient: 'from-amber-900/80 via-orange-900/60 to-transparent' }
@@ -51,8 +51,8 @@ onUnmounted(() => { if (interval) clearInterval(interval) })
         <div class="text-right">
           <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white uppercase">{{ slide.title }}</h2>
           <p class="text-sm sm:text-base text-white/80 mt-1">{{ slide.subtitle }}</p>
-          <p class="text-xs sm:text-sm text-pink-400 mt-0.5">{{ slide.accent }}</p>
-          <button class="mt-3 px-6 py-2 rounded-full bg-pink-600 hover:bg-pink-500 text-white text-sm font-bold uppercase tracking-wide transition-colors">
+          <p class="text-xs sm:text-sm text-secondary-400 mt-0.5">{{ slide.accent }}</p>
+          <button class="mt-3 px-6 py-2 rounded-full bg-secondary-600 hover:bg-secondary-500 text-white text-sm font-bold uppercase tracking-wide transition-colors">
             {{ slide.cta }}
           </button>
         </div>

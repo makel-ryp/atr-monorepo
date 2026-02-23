@@ -3,12 +3,12 @@ const { featuredCharacters } = useCharacters()
 
 // First 6 get colored rings, rest get muted rings
 const ringColors = [
-  'ring-pink-500',
-  'ring-rose-400',
-  'ring-purple-500',
-  'ring-pink-400',
-  'ring-fuchsia-400',
-  'ring-rose-500'
+  'ring-secondary-500',
+  'ring-secondary-400',
+  'ring-primary-500',
+  'ring-secondary-400',
+  'ring-primary-400',
+  'ring-secondary-500'
 ]
 
 // Scroll fade edges via CSS mask on wrapper

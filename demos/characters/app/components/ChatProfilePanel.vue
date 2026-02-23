@@ -252,15 +252,15 @@ const aboutFields = computed(() => [
   padding: 0.625rem;
   border-radius: 0.625rem !important;
   background: transparent !important;
-  border: 1px solid rgb(244, 63, 94) !important;
-  color: rgb(251, 113, 133) !important;
+  border: 1px solid var(--color-secondary-500) !important;
+  color: var(--color-secondary-400) !important;
   font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.15s;
 }
 
 .profile-actions__generate:hover {
-  background: rgba(244, 63, 94, 0.1) !important;
+  background: color-mix(in oklch, var(--color-secondary-500) 10%, transparent) !important;
 }
 
 /* Divider */

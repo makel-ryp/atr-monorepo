@@ -3,7 +3,7 @@ const { characters } = useCharacters()
 
 const selectedId = ref<string | null>(null)
 const selectedCharacter = computed(() =>
-  selectedId.value ? characters.find(c => c.id === selectedId.value) || null : null
+  selectedId.value ? characters.value.find(c => c.id === selectedId.value) || null : null
 )
 
 // Generate deterministic mock photos per character using picsum.photos
@@ -17,7 +17,7 @@ function getPhotos(character: { id: string, name: string }) {
 }
 
 // Show the same characters that appear in the chat sidebar
-const chatCharacters = computed(() => characters.slice(0, 3))
+const chatCharacters = computed(() => characters.value.slice(0, 3))
 
 const characterPhotos = computed(() =>
   chatCharacters.value.map(c => ({

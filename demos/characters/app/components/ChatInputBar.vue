@@ -161,7 +161,7 @@ watch(input, () => nextTick(autoResize))
   height: 2.5rem;
   flex-shrink: 0;
   border-radius: 9999px !important;
-  background: rgb(147, 51, 234) !important;
+  background: var(--color-primary-600) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,6 +170,6 @@ watch(input, () => nextTick(autoResize))
 }
 
 .chat-send-btn:hover {
-  background: rgb(126, 34, 206) !important;
+  background: var(--color-primary-700) !important;
 }
 </style>
