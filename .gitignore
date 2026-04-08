@@ -71,3 +71,4 @@ settings.db-shm
 demos/characters/.data
 demos/dashboard/.data
 apps/companions/.data
+apps/inventory/.data

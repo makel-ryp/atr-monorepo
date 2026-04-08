@@ -9,7 +9,8 @@
         "NUXT_API_SECRET",
         "CORE_DATASOURCE_URL",
         "CORE_DATASOURCE_KEY",
-        "CORE_DATASOURCE_PROVIDER"
+        "CORE_DATASOURCE_PROVIDER",
+        "NITRO_PRESET"
       ]
     },
     "dev": {
