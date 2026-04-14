@@ -30,7 +30,8 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "enc": "multi-encrypt enc",
-    "dec": "multi-encrypt dec"
+    "dec": "multi-encrypt dec",
+    "sync:inventory": "node scripts/sync-inventory.mjs"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4",
