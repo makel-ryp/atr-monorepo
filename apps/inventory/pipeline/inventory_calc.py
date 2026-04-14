@@ -77,7 +77,7 @@ def aggregate_sales(
 
     def _add(rows: list[dict], prefix: str, qty_field: str = "quantity") -> None:
         for row in rows:
-            sku = str(row.get("sku", "")).strip()
+            sku = str(row.get("sku", "")).strip().lstrip("0") or str(row.get("sku", "")).strip()
             if not sku:
                 continue
             if qty_field == "edi_qty":

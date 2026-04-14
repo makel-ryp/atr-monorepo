@@ -1,62 +1,99 @@
 <script setup lang="ts">
-import { VisXYContainer, VisLine, VisArea, VisAxis, VisCrosshair, VisTooltip } from '@unovis/vue'
-
+// ── types ──────────────────────────────────────────────────────────────────────
 interface InventoryRow { sku: string; product_title: string | null }
 
-interface ForecastRow {
-  date: string
-  actual_units: number | null
-  forecast_units: number | null
-  forecast_lower: number | null
-  forecast_upper: number | null
+interface SkuSummary {
+  sku: string
+  product_title: string | null
+  run_date: string | null
+  forecast_method: string | null
+  prev:        { d30: number | null; d60: number | null; d90: number | null }
+  next:        { d30: number | null; d60: number | null; d90: number | null; lower_90d: unknown; upper_90d: unknown }
+  vs_prev_pct: { d30: number | null; d60: number | null; d90: number | null }
+  yoy:         { current_ytd: number | null; prior_ytd: number | null; change_pct: number | null }
+  qvq: {
+    q0: number; q1: number; q2: number
+    q0_label: string; q1_label: string; q2_label: string
+    q0_vs_q1_pct: number | null
+    q1_vs_q2_pct: number | null
+  }
+  channel: {
+    shopify: { d30: number | null; d60: number | null; d90: number | null }
+    amazon:  { d30: number | null; d60: number | null; d90: number | null }
+    edi:     { d30: number | null; d60: number | null; d90: number | null }
+  }
+  rolling:  { d7: number | null; d14: number | null; d30: number | null; d60: number | null; d90: number | null; d180: number | null }
+  velocity: { avg_daily_30d: number | null; avg_daily_90d: number | null; trend: string | null }
 }
 
+// ── data ───────────────────────────────────────────────────────────────────────
 const { data: inventory } = await useFetch<InventoryRow[]>('/api/inventory')
 
 const skuOptions = computed(() =>
-  (inventory.value ?? []).map(r => ({ label: `${r.sku}${r.product_title ? ` — ${r.product_title}` : ''}`, value: r.sku }))
+  (inventory.value ?? []).map(r => ({
+    label: r.product_title ? `${r.sku} — ${r.product_title}` : r.sku,
+    value: r.sku,
+  }))
 )
 
-const selectedSku = ref<string | null>(null)
+const selectedSkus = ref<string[]>([])
 
-// Auto-select first SKU when inventory loads
+// Auto-select first SKU on load
 watch(inventory, (rows) => {
-  if (rows?.length && !selectedSku.value) selectedSku.value = rows[0].sku
+  if (rows?.length && !selectedSkus.value.length) {
+    selectedSkus.value = [rows[0].sku]
+  }
 }, { immediate: true })
 
-const { data: forecastData, pending, refresh } = await useFetch<ForecastRow[]>('/api/forecast', {
-  query: computed(() => ({ sku: selectedSku.value })),
-  watch: [selectedSku],
+const skusQuery = computed(() => selectedSkus.value.join(','))
+
+// Let useFetch handle reactivity natively — API returns [] for empty skus, which maps to the empty state
+const { data: summaryData, pending, refresh: refreshSummary } = useFetch<SkuSummary[]>('/api/forecast-summary', {
+  query: computed(() => ({ skus: skusQuery.value })),
+  watch: [skusQuery],
 })
 
-// unovis helpers — x is the index, y functions per series
-const x = (_: ForecastRow, i: number) => i
-const yActual = (d: ForecastRow) => d.actual_units ?? 0
-const yForecast = (d: ForecastRow) => d.forecast_units ?? 0
-const yLower = (d: ForecastRow) => d.forecast_lower ?? 0
-const yUpper = (d: ForecastRow) => d.forecast_upper ?? 0
+const results = computed<SkuSummary[]>(() => summaryData.value ?? [])
 
-const rows = computed(() => forecastData.value ?? [])
+// ── active tab ─────────────────────────────────────────────────────────────────
+const tabs = [
+  { label: 'Prev vs Next', slot: 'prev-next' as const },
+  { label: 'Year over Year', slot: 'yoy' as const },
+  { label: 'Quarter vs Quarter', slot: 'qvq' as const },
+  { label: 'Channel', slot: 'channel' as const },
+  { label: 'Velocity', slot: 'velocity' as const },
+]
 
-function xTick(i: number) {
-  const d = rows.value[i]
-  if (!d) return ''
-  // Show label every ~30 data points to avoid crowding
-  if (i % 30 !== 0 && i !== rows.value.length - 1) return ''
-  return d.date.slice(0, 10)
+// ── display helpers ────────────────────────────────────────────────────────────
+function fmt(n: number | null): string {
+  if (n === null || n === undefined) return '—'
+  return n.toLocaleString()
 }
 
-const tooltip = (d: ForecastRow) =>
-  `<strong>${d.date?.slice(0, 10)}</strong><br/>
-   Actual: ${d.actual_units ?? '—'}<br/>
-   Forecast: ${d.forecast_units ?? '—'}<br/>
-   Range: ${d.forecast_lower ?? '—'} – ${d.forecast_upper ?? '—'}`
+function fmtPct(n: number | null): string {
+  if (n === null || n === undefined) return '—'
+  return `${n > 0 ? '+' : ''}${n}%`
+}
 
-// Split where we cross from historical (actual) to forecast-only
-const splitIndex = computed(() => {
-  const idx = rows.value.findLastIndex(r => r.actual_units !== null && r.actual_units > 0)
-  return idx >= 0 ? idx : rows.value.length
-})
+function deltaClass(n: number | null): string {
+  if (n === null) return 'text-muted'
+  if (n > 0) return 'text-success font-medium'
+  if (n < 0) return 'text-error font-medium'
+  return 'text-muted'
+}
+
+function trendIcon(trend: string | null): string {
+  if (!trend) return 'i-lucide-minus'
+  if (trend === 'up') return 'i-lucide-trending-up'
+  if (trend === 'down') return 'i-lucide-trending-down'
+  return 'i-lucide-minus'
+}
+
+function trendColor(trend: string | null): string {
+  if (trend === 'up') return 'text-success'
+  if (trend === 'down') return 'text-error'
+  return 'text-muted'
+}
 </script>
 
 <template>
@@ -64,14 +101,41 @@ const splitIndex = computed(() => {
     <template #header>
       <UDashboardNavbar title="Forecast">
         <template #right>
-          <USelect
-            v-model="selectedSku"
-            :options="skuOptions"
-            value-attribute="value"
-            label-attribute="label"
-            placeholder="Select a SKU…"
-            class="w-72"
-          />
+          <div class="flex items-center gap-3">
+            <USelectMenu
+              v-model="selectedSkus"
+              :items="skuOptions"
+              value-key="value"
+              label-key="label"
+              multiple
+              placeholder="Select SKUs…"
+              class="w-96"
+            >
+              <template #label>
+                <span v-if="!selectedSkus.length" class="text-muted">Select SKUs…</span>
+                <span v-else-if="selectedSkus.length === 1">{{ selectedSkus[0] }}</span>
+                <span v-else>{{ selectedSkus.length }} SKUs selected</span>
+              </template>
+            </USelectMenu>
+            <UButton
+              v-if="selectedSkus.length"
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              icon="i-lucide-x"
+              @click="selectedSkus = []"
+            >
+              Clear
+            </UButton>
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              icon="i-lucide-refresh-cw"
+              :loading="pending"
+              @click="refreshSummary()"
+            />
+          </div>
         </template>
       </UDashboardNavbar>
     </template>
@@ -79,136 +143,286 @@ const splitIndex = computed(() => {
     <template #body>
       <div class="p-6 space-y-6">
 
-        <!-- Summary cards -->
-        <div v-if="rows.length" class="grid grid-cols-3 gap-4">
-          <UCard>
-            <p class="text-xs text-muted uppercase mb-1">Data Points</p>
-            <p class="text-2xl font-semibold">{{ rows.length }}</p>
-          </UCard>
-          <UCard>
-            <p class="text-xs text-muted uppercase mb-1">Historical</p>
-            <p class="text-2xl font-semibold">{{ splitIndex }}</p>
-          </UCard>
-          <UCard>
-            <p class="text-xs text-muted uppercase mb-1">Forecast Window</p>
-            <p class="text-2xl font-semibold">{{ rows.length - splitIndex }}</p>
-          </UCard>
+        <!-- Empty state -->
+        <div v-if="!selectedSkus.length" class="flex flex-col items-center justify-center h-64 text-muted gap-3">
+          <UIcon name="i-lucide-bar-chart-2" class="h-10 w-10" />
+          <p class="text-sm">Select one or more SKUs to view forecast data.</p>
         </div>
 
-        <!-- Chart -->
-        <UCard :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }">
-          <template #header>
-            <div class="flex items-center gap-6">
-              <div class="flex items-center gap-2 text-sm">
-                <span class="inline-block h-2 w-6 rounded bg-primary" />
-                <span class="text-muted">Actual</span>
-              </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span class="inline-block h-2 w-6 rounded border-2 border-dashed border-warning bg-transparent" />
-                <span class="text-muted">Forecast</span>
-              </div>
-              <div class="flex items-center gap-2 text-sm">
-                <span class="inline-block h-2 w-6 rounded bg-warning opacity-20" />
-                <span class="text-muted">Confidence band</span>
-              </div>
-            </div>
-          </template>
+        <!-- Loading -->
+        <div v-else-if="pending" class="flex items-center justify-center h-64">
+          <UIcon name="i-lucide-loader-circle" class="animate-spin h-6 w-6 text-muted" />
+        </div>
 
-          <div v-if="pending" class="flex items-center justify-center h-80">
-            <UIcon name="i-lucide-loader-circle" class="animate-spin h-6 w-6 text-muted" />
+        <!-- No results -->
+        <div v-else-if="!results.length" class="flex flex-col items-center justify-center h-64 text-muted gap-3">
+          <UIcon name="i-lucide-database-zap" class="h-10 w-10" />
+          <p class="text-sm">No forecast data yet — run the pipeline to generate data.</p>
+        </div>
+
+        <!-- Data -->
+        <template v-else>
+
+          <!-- Summary chips -->
+          <div class="flex items-center gap-3 flex-wrap">
+            <UBadge
+              v-for="s in results"
+              :key="s.sku"
+              variant="subtle"
+              color="primary"
+              class="text-xs"
+            >
+              {{ s.sku }}
+              <span v-if="s.product_title" class="text-muted ml-1">— {{ s.product_title }}</span>
+            </UBadge>
+            <span v-if="results[0]?.run_date" class="text-xs text-muted ml-auto">
+              Last run: {{ results[0].run_date }}
+            </span>
           </div>
 
-          <div v-else-if="!rows.length" class="flex flex-col items-center justify-center h-80 text-muted gap-2">
-            <UIcon name="i-lucide-chart-no-axes-column" class="h-8 w-8" />
-            <p class="text-sm">No forecast data for this SKU yet.</p>
-          </div>
+          <!-- Tabs -->
+          <UTabs :items="tabs">
 
-          <VisXYContainer
-            v-else
-            :data="rows"
-            :padding="{ top: 20, left: 16, right: 16, bottom: 8 }"
-            class="h-80"
-          >
-            <!-- Confidence band as area between lower and upper -->
-            <VisArea
-              :x="x"
-              :y0="yLower"
-              :y1="yUpper"
-              color="var(--ui-warning)"
-              :opacity="0.12"
-            />
+            <!-- ── Prev vs Next ───────────────────────────────────────────── -->
+            <template #prev-next>
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border">
+                      <th class="text-left px-4 py-3 text-muted font-medium w-48">SKU</th>
+                      <!-- 30d -->
+                      <th class="text-right px-3 py-3 text-muted font-medium">Prev 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Next 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">+/−</th>
+                      <!-- 60d -->
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Prev 60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Next 60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">+/−</th>
+                      <!-- 90d -->
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Prev 90d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Next 90d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">+/−</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    <tr v-for="s in results" :key="s.sku" class="hover:bg-elevated/50">
+                      <td class="px-4 py-3">
+                        <p class="font-medium">{{ s.sku }}</p>
+                        <p v-if="s.product_title" class="text-xs text-muted truncate max-w-40">{{ s.product_title }}</p>
+                      </td>
+                      <!-- 30d -->
+                      <td class="px-3 py-3 text-right tabular-nums text-muted">{{ fmt(s.prev.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums font-medium">{{ fmt(s.next.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.vs_prev_pct.d30)">{{ fmtPct(s.vs_prev_pct.d30) }}</td>
+                      <!-- 60d -->
+                      <td class="px-3 py-3 text-right tabular-nums text-muted border-l border-border">{{ fmt(s.prev.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums font-medium">{{ fmt(s.next.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.vs_prev_pct.d60)">{{ fmtPct(s.vs_prev_pct.d60) }}</td>
+                      <!-- 90d -->
+                      <td class="px-3 py-3 text-right tabular-nums text-muted border-l border-border">{{ fmt(s.prev.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums font-medium">{{ fmt(s.next.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.vs_prev_pct.d90)">{{ fmtPct(s.vs_prev_pct.d90) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
 
-            <!-- Actual units line -->
-            <VisLine
-              :x="x"
-              :y="yActual"
-              color="var(--ui-primary)"
-            />
+            <!-- ── Year over Year ─────────────────────────────────────────── -->
+            <template #yoy>
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border">
+                      <th class="text-left px-4 py-3 text-muted font-medium w-48">SKU</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">YTD (This Yr)</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">YTD (Prior Yr)</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">YoY %</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Prev 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Prev 60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Prev 90d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Next 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Next 60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Next 90d</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    <tr v-for="s in results" :key="s.sku" class="hover:bg-elevated/50">
+                      <td class="px-4 py-3">
+                        <p class="font-medium">{{ s.sku }}</p>
+                        <p v-if="s.product_title" class="text-xs text-muted truncate max-w-40">{{ s.product_title }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums font-medium">{{ fmt(s.yoy.current_ytd) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted">{{ fmt(s.yoy.prior_ytd) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.yoy.change_pct)">{{ fmtPct(s.yoy.change_pct) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted border-l border-border">{{ fmt(s.prev.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted">{{ fmt(s.prev.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted">{{ fmt(s.prev.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums border-l border-border">{{ fmt(s.next.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.next.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.next.d90) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="text-xs text-muted mt-3 px-4">
+                  YoY is year-to-date vs same period prior year. Per-interval YoY requires 365 days of history — extend
+                  <code class="font-mono">HISTORY_DAYS</code> in <code class="font-mono">forecast_timeseries.py</code> to unlock it.
+                </p>
+              </div>
+            </template>
 
-            <!-- Forecast line -->
-            <VisLine
-              :x="x"
-              :y="yForecast"
-              color="var(--ui-warning)"
-            />
+            <!-- ── Quarter vs Quarter ─────────────────────────────────────── -->
+            <template #qvq>
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border">
+                      <th class="text-left px-4 py-3 text-muted font-medium w-48">SKU</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Q0 (most recent 90d)</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Q-1 (prior 90d)</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Q0 vs Q-1</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Q-2 (90d before)</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Q-1 vs Q-2</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    <tr v-for="s in results" :key="s.sku" class="hover:bg-elevated/50">
+                      <td class="px-4 py-3">
+                        <p class="font-medium">{{ s.sku }}</p>
+                        <p v-if="s.product_title" class="text-xs text-muted truncate max-w-40">{{ s.product_title }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums font-medium">
+                        {{ fmt(s.qvq.q0) }}
+                        <p class="text-xs text-muted font-normal">{{ s.qvq.q0_label }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted">
+                        {{ fmt(s.qvq.q1) }}
+                        <p class="text-xs text-muted">{{ s.qvq.q1_label }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.qvq.q0_vs_q1_pct)">
+                        {{ fmtPct(s.qvq.q0_vs_q1_pct) }}
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums text-muted border-l border-border">
+                        {{ fmt(s.qvq.q2) }}
+                        <p class="text-xs text-muted">{{ s.qvq.q2_label }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums" :class="deltaClass(s.qvq.q1_vs_q2_pct)">
+                        {{ fmtPct(s.qvq.q1_vs_q2_pct) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="text-xs text-muted mt-3 px-4">
+                  QvQ is computed from daily actuals in <code class="font-mono">forecast_history</code>.
+                  Extend <code class="font-mono">HISTORY_DAYS</code> beyond 180 in the pipeline for deeper quarter history.
+                </p>
+              </div>
+            </template>
 
-            <VisAxis type="x" :x="x" :tick-format="xTick" />
-            <VisAxis type="y" />
+            <!-- ── Channel Breakdown ──────────────────────────────────────── -->
+            <template #channel>
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border">
+                      <th class="text-left px-4 py-3 text-muted font-medium w-48">SKU</th>
+                      <!-- Shopify -->
+                      <th class="text-right px-3 py-3 text-muted font-medium">
+                        <div class="flex items-center justify-end gap-1">
+                          <UIcon name="i-logos-shopify" class="h-3 w-3" />
+                          30d
+                        </div>
+                      </th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">90d</th>
+                      <!-- Amazon -->
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">
+                        <div class="flex items-center justify-end gap-1">
+                          <UIcon name="i-logos-amazon" class="h-3 w-3" />
+                          30d
+                        </div>
+                      </th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">90d</th>
+                      <!-- EDI -->
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">EDI 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">90d</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    <tr v-for="s in results" :key="s.sku" class="hover:bg-elevated/50">
+                      <td class="px-4 py-3">
+                        <p class="font-medium">{{ s.sku }}</p>
+                        <p v-if="s.product_title" class="text-xs text-muted truncate max-w-40">{{ s.product_title }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.shopify.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.shopify.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.shopify.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums border-l border-border">{{ fmt(s.channel.amazon.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.amazon.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.amazon.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums border-l border-border">{{ fmt(s.channel.edi.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.edi.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.channel.edi.d90) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
 
-            <VisCrosshair
-              color="var(--ui-primary)"
-              :template="tooltip"
-            />
-            <VisTooltip />
-          </VisXYContainer>
-        </UCard>
+            <!-- ── Velocity ───────────────────────────────────────────────── -->
+            <template #velocity>
+              <div class="overflow-x-auto mt-4">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border">
+                      <th class="text-left px-4 py-3 text-muted font-medium w-48">SKU</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">7d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">14d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">60d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">90d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">180d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium border-l border-border">Avg/day 30d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Avg/day 90d</th>
+                      <th class="text-right px-3 py-3 text-muted font-medium">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    <tr v-for="s in results" :key="s.sku" class="hover:bg-elevated/50">
+                      <td class="px-4 py-3">
+                        <p class="font-medium">{{ s.sku }}</p>
+                        <p v-if="s.product_title" class="text-xs text-muted truncate max-w-40">{{ s.product_title }}</p>
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d7) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d14) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d30) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d60) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d90) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums">{{ fmt(s.rolling.d180) }}</td>
+                      <td class="px-3 py-3 text-right tabular-nums border-l border-border">
+                        {{ s.velocity.avg_daily_30d != null ? s.velocity.avg_daily_30d.toFixed(1) : '—' }}
+                      </td>
+                      <td class="px-3 py-3 text-right tabular-nums">
+                        {{ s.velocity.avg_daily_90d != null ? s.velocity.avg_daily_90d.toFixed(1) : '—' }}
+                      </td>
+                      <td class="px-3 py-3 text-right">
+                        <div class="flex items-center justify-end gap-1" :class="trendColor(s.velocity.trend)">
+                          <UIcon :name="trendIcon(s.velocity.trend)" class="h-4 w-4" />
+                          <span class="text-xs capitalize">{{ s.velocity.trend ?? '—' }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
 
-        <!-- Raw data table -->
-        <UCard>
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-table-2" class="h-4 w-4 text-primary" />
-              <span class="font-semibold text-sm">Raw Data</span>
-            </div>
-          </template>
-          <div class="overflow-auto max-h-64">
-            <table class="w-full text-sm">
-              <thead class="sticky top-0 bg-elevated/80 backdrop-blur-sm">
-                <tr>
-                  <th class="text-left px-3 py-2 text-muted font-medium">Date</th>
-                  <th class="text-right px-3 py-2 text-muted font-medium">Actual</th>
-                  <th class="text-right px-3 py-2 text-muted font-medium">Forecast</th>
-                  <th class="text-right px-3 py-2 text-muted font-medium">Lower</th>
-                  <th class="text-right px-3 py-2 text-muted font-medium">Upper</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border">
-                <tr v-for="row in rows" :key="row.date" class="hover:bg-elevated/50">
-                  <td class="px-3 py-1.5 font-mono text-xs">{{ row.date?.slice(0, 10) }}</td>
-                  <td class="px-3 py-1.5 text-right tabular-nums">{{ row.actual_units ?? '—' }}</td>
-                  <td class="px-3 py-1.5 text-right tabular-nums text-warning">{{ row.forecast_units ?? '—' }}</td>
-                  <td class="px-3 py-1.5 text-right tabular-nums text-muted">{{ row.forecast_lower ?? '—' }}</td>
-                  <td class="px-3 py-1.5 text-right tabular-nums text-muted">{{ row.forecast_upper ?? '—' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </UCard>
+          </UTabs>
+        </template>
 
       </div>
     </template>
   </UDashboardPanel>
 </template>
-
-<style scoped>
-.unovis-xy-container {
-  --vis-crosshair-line-stroke-color: var(--ui-primary);
-  --vis-crosshair-circle-stroke-color: var(--ui-bg);
-  --vis-axis-grid-color: var(--ui-border);
-  --vis-axis-tick-color: var(--ui-border);
-  --vis-axis-tick-label-color: var(--ui-text-dimmed);
-  --vis-tooltip-background-color: var(--ui-bg);
-  --vis-tooltip-border-color: var(--ui-border);
-  --vis-tooltip-text-color: var(--ui-text-highlighted);
-}
-</style>

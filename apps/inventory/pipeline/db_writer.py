@@ -134,7 +134,26 @@ def write_inventory_master(rows: list[dict]) -> int:
                 continue
             row["run_date"] = today
             conn.execute("""
-                INSERT OR REPLACE INTO inventory_master VALUES (
+                INSERT OR REPLACE INTO inventory_master (
+                    sku, product_title, variant_title,
+                    shopify_stock, amazon_fba_stock, current_stock,
+                    sps_committed_qty, effective_stock,
+                    shopify_30d, shopify_60d, shopify_90d,
+                    amazon_30d, amazon_60d, amazon_90d,
+                    edi_30d, edi_60d, edi_90d,
+                    total_30d, total_60d, total_90d,
+                    avg_weekly_velocity, avg_monthly_velocity,
+                    days_of_stock, months_of_stock,
+                    reorder_flag, reorder_threshold,
+                    reorder_qty_9mo, reorder_qty_12mo,
+                    forecast_30d, forecast_60d, forecast_90d,
+                    forecast_lower_90d, forecast_upper_90d, forecast_method,
+                    stockout_date, order_by_date,
+                    days_until_order_deadline, order_status,
+                    velocity_season_adjusted,
+                    reorder_qty_9mo_adj, reorder_qty_12mo_adj,
+                    note, run_date
+                ) VALUES (
                     :sku, :product_title, :variant_title,
                     :shopify_stock, :amazon_fba_stock, :current_stock,
                     :sps_committed_qty, :effective_stock,

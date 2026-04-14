@@ -150,11 +150,12 @@ def pull_orders(client: ShopifyClient) -> list[dict]:
                 sku = item.get("sku") or ""
                 if not sku.strip():
                     continue  # blank/None SKU — drop before allowlist filter
+                norm_sku = sku.strip().lstrip("0") or sku.strip()
                 rows.append(
                     {
                         "date": date,
                         "order_id": order_id,
-                        "sku": sku,
+                        "sku": norm_sku,
                         "product_title": item.get("title", ""),
                         "variant_title": item.get("variant_title", ""),
                         "quantity": int(item.get("quantity", 0)),

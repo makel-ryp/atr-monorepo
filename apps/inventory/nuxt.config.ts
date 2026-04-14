@@ -18,7 +18,8 @@ export default defineNuxtConfig({
     server: {
       hmr: {
         overlay: false
-      }
+      },
+      allowedHosts: true,
     }
   },
 

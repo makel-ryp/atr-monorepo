@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const { clear } = useUserSession()
 const open = ref(false)
 
 const links: NavigationMenuItem[] = [
@@ -16,9 +15,9 @@ const links: NavigationMenuItem[] = [
   { label: 'EDI Orders', icon: 'i-lucide-building-2', to: '/edi-orders' }
 ]
 
+// Auth is disabled — logout is a no-op UI affordance only
 async function logout() {
-  await clear()
-  await navigateTo('/login')
+  await navigateTo('/')
 }
 </script>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
 // ── File upload ───────────────────────────────────────────────────────────────
@@ -10,6 +11,16 @@ interface UploadZone {
   files: File[]
   uploading: boolean
   results: { name: string; ok: boolean; error?: string }[]
+}
+
+// Function refs — Vue 3 safe alternative to dynamic $refs inside v-for
+const fileInputRefs = new Map<string, HTMLInputElement>()
+function setFileInputRef(el: Element | ComponentPublicInstance | null, type: string) {
+  if (el) fileInputRefs.set(type, el as HTMLInputElement)
+  else fileInputRefs.delete(type)
+}
+function openFilePicker(type: string) {
+  fileInputRefs.get(type)?.click()
 }
 
 const uploadZones = ref<UploadZone[]>([
@@ -55,13 +66,15 @@ async function uploadZone(zone: UploadZone) {
   zone.uploading = true
   zone.results = []
 
+  let pipelineAutoStarted = false
   for (const file of zone.files) {
     const form = new FormData()
     form.append('type', zone.type)
     form.append('file', file)
     try {
-      await $fetch('/api/upload', { method: 'POST', body: form })
+      const res = await $fetch<{ ok: boolean; pipeline_started: boolean }>('/api/upload', { method: 'POST', body: form })
       zone.results.push({ name: file.name, ok: true })
+      if (res.pipeline_started) pipelineAutoStarted = true
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed'
       zone.results.push({ name: file.name, ok: false, error: msg })
@@ -70,11 +83,21 @@ async function uploadZone(zone: UploadZone) {
 
   zone.files = []
   zone.uploading = false
+
+  const successCount = zone.results.filter(r => r.ok).length
   toast.add({
     title: `${zone.label} upload complete`,
-    description: `${zone.results.filter(r => r.ok).length} of ${zone.results.length} files saved`,
+    description: pipelineAutoStarted
+      ? `${successCount} of ${zone.results.length} files saved — pipeline started, dashboard will update shortly`
+      : `${successCount} of ${zone.results.length} files saved — pipeline already running`,
     color: zone.results.every(r => r.ok) ? 'success' : 'warning',
   })
+
+  if (pipelineAutoStarted) {
+    pipelineRunning.value = true
+    startPolling()
+    fetchStatus()
+  }
 }
 
 interface PipelineStatus {
@@ -363,8 +386,7 @@ const skuColumns: TableColumn<SkuParam>[] = [
           </template>
 
           <p class="text-sm text-muted mb-5">
-            Drop exported CSV/TSV files here to stage them for the next pipeline run.
-            Files are saved to the pipeline inbox — click <strong>Run Pipeline</strong> above to process them.
+            Drop exported CSV/TSV files here. The pipeline will start automatically after upload and the dashboard will update within a minute.
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -380,12 +402,12 @@ const skuColumns: TableColumn<SkuParam>[] = [
                 class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-primary hover:bg-primary/5"
                 @dragover.prevent
                 @drop="onFileDrop(zone, $event)"
-                @click="($refs[`input-${zone.type}`] as HTMLInputElement)?.click()"
+                @click="openFilePicker(zone.type)"
               >
                 <UIcon name="i-lucide-cloud-upload" class="h-8 w-8 mx-auto mb-2 text-muted" />
                 <p class="text-sm text-muted">Drag & drop or <span class="text-primary font-medium">browse</span></p>
                 <input
-                  :ref="`input-${zone.type}`"
+                  :ref="(el) => setFileInputRef(el, zone.type)"
                   type="file"
                   multiple
                   accept=".csv,.tsv,.txt"

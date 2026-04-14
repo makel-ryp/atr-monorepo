@@ -6,15 +6,14 @@ interface InventoryRow {
   product_title: string | null
   shopify_stock: number | null
   amazon_fba_stock: number | null
-  current_stock: number | null
-  sps_committed_qty: number | null
+  current_stock: number | null      // used in activeSKUs + totalUnitsOnHand cards
+  sps_committed_qty: number | null  // folded into Free Stock cell
   effective_stock: number | null
   avg_monthly_velocity: number | null
   months_of_stock: number | null
   forecast_90d: number | null
   order_status: string | null
   order_by_date: string | null
-  days_until_order_deadline: number | null
 }
 
 interface PipelineStatus {
@@ -90,42 +89,46 @@ const columns: TableColumn<InventoryRow>[] = [
     cell: ({ row }) => fmt(row.original.amazon_fba_stock),
   },
   {
-    accessorKey: 'current_stock',
-    header: 'Gross Stock',
-    cell: ({ row }) => fmt(row.original.current_stock),
-  },
-  {
-    accessorKey: 'sps_committed_qty',
-    header: 'SPS Reserved',
-    cell: ({ row }) => {
-      const qty = row.original.sps_committed_qty ?? 0
-      if (qty <= 0) return '—'
-      return h('span', { class: 'text-warning-500 font-medium' }, `(${fmt(qty)})`)
-    },
-  },
-  {
+    // effective_stock = current_stock − sps_committed_qty
+    // Folding sps_committed_qty note in here removes two redundant columns
+    // (current_stock is always shopify+amazon; effective is always current−sps)
     accessorKey: 'effective_stock',
     header: 'Free Stock',
     cell: ({ row }) => {
       const val = row.original.effective_stock ?? row.original.current_stock ?? 0
       const committed = row.original.sps_committed_qty ?? 0
-      const cls = committed > 0 ? 'font-semibold text-primary' : ''
-      return h('span', { class: cls }, fmt(val))
+      if (committed > 0) {
+        return h('span', {}, [
+          fmt(val),
+          h('span', { class: 'ml-1 text-xs text-warning-500' }, `(${fmt(committed)} SPS)`),
+        ])
+      }
+      return fmt(val)
     },
   },
   {
+    // avg_monthly_velocity = total_90d / 3 — all channels combined.
+    // Per-channel (shopify_90d/3, amazon_90d/3) removed: identical to this
+    // column when only one channel has sales, adding noise otherwise.
     accessorKey: 'avg_monthly_velocity',
-    header: 'Mo Velocity',
+    header: 'Velocity /mo',
     cell: ({ row }) => fmt(row.original.avg_monthly_velocity, 0),
   },
   {
     accessorKey: 'months_of_stock',
-    header: 'Months Stock',
-    cell: ({ row }) => fmt(row.original.months_of_stock, 1),
+    header: 'Months of Stock',
+    cell: ({ row }) => {
+      const m = row.original.months_of_stock
+      if (m === null || m === undefined) return '—'
+      if (m >= 999) return '∞'
+      return fmt(m, 1)
+    },
   },
   {
+    // forecast_90d from pipeline (WMA or Prophet). Per-channel forecasts
+    // removed: they duplicate this column when only one channel is active.
     accessorKey: 'forecast_90d',
-    header: 'Forecast 90d',
+    header: 'Forecast (90d)',
     cell: ({ row }) => fmt(row.original.forecast_90d, 0),
   },
   {

@@ -264,6 +264,18 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { messages } = body as { messages: { role: string; content: string }[] }
 
+  if (!Array.isArray(messages) || messages.length === 0) {
+    throw createError({ statusCode: 400, message: 'messages must be a non-empty array' })
+  }
+  if (messages.length > 50) {
+    throw createError({ statusCode: 400, message: 'Too many messages (max 50)' })
+  }
+  // Rough token guard: ~4 chars per token, keep under ~40k tokens of user input
+  const totalChars = messages.reduce((s, m) => s + String(m.content ?? '').length, 0)
+  if (totalChars > 160_000) {
+    throw createError({ statusCode: 400, message: 'Message content too large' })
+  }
+
   const db = useDb()
   const { rows: master }   = await db.sql`SELECT * FROM inventory_master`
   const { rows: pipeline } = await db.sql`SELECT * FROM stock_pipeline`

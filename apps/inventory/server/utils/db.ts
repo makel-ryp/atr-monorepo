@@ -62,7 +62,8 @@ function makeBunDb(): DbWrapper {
 
 function makeNodeDb(): DbWrapper {
   const { createDatabase } = _require('db0')
-  const betterSqlite3Connector = _require('db0/connectors/better-sqlite3')
+  const mod = _require('db0/connectors/better-sqlite3')
+  const betterSqlite3Connector = mod.default ?? mod
 
   const connector = betterSqlite3Connector({ path: DB_PATH })
   connector.exec('PRAGMA journal_mode=WAL')

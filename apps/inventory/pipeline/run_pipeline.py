@@ -177,7 +177,7 @@ def main() -> None:
                     sku, {"shopify_stock": 0, "amazon_fba_stock": 0}
                 )
                 entry["amazon_fba_stock"] = float(qty)
-        elif step_name == "sps" and "rows" in result:
+        elif step_name == "sps" and "edi_rows" in result:
             pipeline_data["edi_rows"] = result.get("edi_rows", [])
         elif step_name == "calculator":
             calc_result = result

@@ -1,7 +1,35 @@
 import { spawn } from 'node:child_process'
 
-export default defineEventHandler(() => {
-  const child = spawn('python', ['pipeline/run_pipeline.py'], {
+// Guard against concurrent pipeline runs — check status before spawning
+async function isPipelineRunning(): Promise<boolean> {
+  try {
+    const db = useDb()
+    const { rows: latest } = await db.sql`
+      SELECT run_timestamp FROM run_log ORDER BY run_timestamp DESC LIMIT 1
+    `
+    if (!latest?.length) return false
+    const ts = (latest[0] as Record<string, unknown>).run_timestamp as string
+    const { rows: steps } = await db.sql`
+      SELECT status FROM run_log WHERE run_timestamp = ${ts}
+    `
+    return (steps as Record<string, unknown>[]).some(s => s.status === 'running')
+  } catch {
+    return false
+  }
+}
+
+// Resolve Python command — Windows uses 'py', Unix uses 'python3' or 'python'
+function pythonCmd(): string {
+  if (process.platform === 'win32') return 'py'
+  return process.env.PYTHON_CMD ?? 'python3'
+}
+
+export default defineEventHandler(async () => {
+  if (await isPipelineRunning()) {
+    throw createError({ statusCode: 409, message: 'Pipeline is already running' })
+  }
+
+  const child = spawn(pythonCmd(), ['pipeline/run_pipeline.py'], {
     detached: true,
     stdio: 'ignore',
     cwd: process.cwd(),

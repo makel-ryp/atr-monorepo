@@ -1,9 +1,32 @@
 import { writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { spawn } from 'node:child_process'
 
 const ALLOWED_TYPES = ['amazon', 'sps'] as const
 const ALLOWED_EXTS  = ['.csv', '.tsv', '.txt']
 const MAX_BYTES     = 50 * 1024 * 1024 // 50 MB
+
+function pythonCmd(): string {
+  if (process.platform === 'win32') return 'py'
+  return process.env.PYTHON_CMD ?? 'python3'
+}
+
+async function isPipelineRunning(): Promise<boolean> {
+  try {
+    const db = useDb()
+    const { rows: latest } = await db.sql`
+      SELECT run_timestamp FROM run_log ORDER BY run_timestamp DESC LIMIT 1
+    `
+    if (!latest?.length) return false
+    const ts = (latest[0] as Record<string, unknown>).run_timestamp as string
+    const { rows: steps } = await db.sql`
+      SELECT status FROM run_log WHERE run_timestamp = ${ts}
+    `
+    return (steps as Record<string, unknown>[]).some(s => s.status === 'running')
+  } catch {
+    return false
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const form = await readFormData(event)
@@ -37,11 +60,24 @@ export default defineEventHandler(async (event) => {
   const buffer = Buffer.from(await file.arrayBuffer())
   await writeFile(dest, buffer)
 
+  // Auto-trigger pipeline after upload — skip if already running
+  let pipeline_started = false
+  if (!await isPipelineRunning()) {
+    const child = spawn(pythonCmd(), ['pipeline/run_pipeline.py'], {
+      detached: true,
+      stdio: 'ignore',
+      cwd: process.cwd(),
+      env: { ...process.env },
+    })
+    child.unref()
+    pipeline_started = true
+  }
+
   return {
-    ok:       true,
+    ok:               true,
     type,
-    filename: safeName,
-    size:     file.size,
-    dest,
+    filename:         safeName,
+    size:             file.size,
+    pipeline_started,
   }
 })
