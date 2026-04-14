@@ -21,7 +21,9 @@ interface PipelineEntry {
 const UBadge  = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
-const { data: pipeline, refresh } = await useFetch<PipelineEntry[]>('/api/stock-pipeline')
+const { data: pipeline, refresh } = await useFetch<PipelineEntry[]>('/api/stock-pipeline', {
+  default: () => [] as PipelineEntry[],
+})
 const toast = useToast()
 
 const showArchived = ref(false)
@@ -293,7 +295,7 @@ const columns: TableColumn<PipelineEntry>[] = [
           </UFormField>
 
           <UFormField label="Ship Method">
-            <USelect v-model="form.type" :options="typeOptions" value-attribute="value" label-attribute="label" class="w-full" />
+            <USelect v-model="form.type" :items="typeOptions" class="w-full" />
           </UFormField>
 
           <UFormField label="PO Number">

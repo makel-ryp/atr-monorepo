@@ -1,4 +1,5 @@
 import { writeFile, mkdir } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
 
@@ -9,6 +10,17 @@ const MAX_BYTES     = 50 * 1024 * 1024 // 50 MB
 function pythonCmd(): string {
   if (process.platform === 'win32') return 'py'
   return process.env.PYTHON_CMD ?? 'python3'
+}
+
+function getAppDir(): string {
+  const candidates = [
+    process.cwd(),
+    join(process.cwd(), 'apps', 'inventory'),
+  ]
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'pipeline', 'run_pipeline.py'))) return dir
+  }
+  return process.cwd()
 }
 
 async function isPipelineRunning(): Promise<boolean> {
@@ -53,7 +65,8 @@ export default defineEventHandler(async (event) => {
   // Sanitise filename — strip any path separators
   const safeName = file.name.replace(/[/\\]/g, '_').replace(/[^a-zA-Z0-9._-]/g, '_')
 
-  const inboxDir = join(process.cwd(), `${type}_inbox`)
+  const appDir = getAppDir()
+  const inboxDir = join(appDir, `${type}_inbox`)
   await mkdir(inboxDir, { recursive: true })
 
   const dest = join(inboxDir, safeName)
@@ -66,7 +79,7 @@ export default defineEventHandler(async (event) => {
     const child = spawn(pythonCmd(), ['pipeline/run_pipeline.py'], {
       detached: true,
       stdio: 'ignore',
-      cwd: process.cwd(),
+      cwd: appDir,
       env: { ...process.env },
     })
     child.unref()

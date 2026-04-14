@@ -27,7 +27,9 @@ interface SkuSummary {
 }
 
 // ── data ───────────────────────────────────────────────────────────────────────
-const { data: inventory } = await useFetch<InventoryRow[]>('/api/inventory')
+const { data: inventory } = await useFetch<InventoryRow[]>('/api/inventory', {
+  default: () => [] as InventoryRow[],
+})
 
 const skuOptions = computed(() =>
   (inventory.value ?? []).map(r => ({
@@ -36,14 +38,16 @@ const skuOptions = computed(() =>
   }))
 )
 
-const selectedSkus = ref<string[]>([])
+// useState ensures this value is consistent between SSR and client hydration.
+// We never mutate it during SSR — auto-select happens in onMounted (client only).
+const selectedSkus = useState<string[]>('forecast-selected-skus', () => [])
 
-// Auto-select first SKU on load
-watch(inventory, (rows) => {
-  if (rows?.length && !selectedSkus.value.length) {
-    selectedSkus.value = [rows[0].sku]
+// Auto-select first SKU after mount (client only) to avoid SSR/client mismatch
+onMounted(() => {
+  if (inventory.value?.length && !selectedSkus.value.length) {
+    selectedSkus.value = [inventory.value[0].sku]
   }
-}, { immediate: true })
+})
 
 const skusQuery = computed(() => selectedSkus.value.join(','))
 

@@ -185,7 +185,9 @@ function stepColor(status: string) {
 }
 
 // ── SKU Params ───────────────────────────────────────────────────────────────
-const { data: skuParams, refresh: refreshParams } = await useFetch<SkuParam[]>('/api/sku-params')
+const { data: skuParams, refresh: refreshParams } = await useFetch<SkuParam[]>('/api/sku-params', {
+  default: () => [] as SkuParam[],
+})
 const editingRow = ref<string | null>(null)
 const editValues = ref<Partial<SkuParam>>({})
 const savingRow = ref<string | null>(null)
