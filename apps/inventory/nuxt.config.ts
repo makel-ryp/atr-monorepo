@@ -1,6 +1,4 @@
 export default defineNuxtConfig({
-  extends: ['../../organization'],
-
   modules: [
     '@nuxt/ui',
     '@vueuse/nuxt',

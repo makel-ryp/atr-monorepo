@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "bun install && cd apps/inventory && bun run build"
+buildCommand = "bun install && bun run build"
 
 [deploy]
-startCommand = "bun apps/inventory/.output/server/index.mjs"
+startCommand = "bun .output/server/index.mjs"
 healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

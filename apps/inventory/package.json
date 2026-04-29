@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
-    "@app-agent/organization": "workspace:*",
     "@iconify-json/lucide": "^1.2.87",
     "@nuxt/ui": "^4.4.0",
     "@unovis/ts": "^1.6.2",
