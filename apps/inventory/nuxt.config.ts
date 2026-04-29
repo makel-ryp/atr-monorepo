@@ -3,7 +3,6 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/ui',
-    '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils'
   ],
@@ -25,10 +24,6 @@ export default defineNuxtConfig({
 
   typescript: {
     typeCheck: false
-  },
-
-  hub: {
-    db: 'sqlite'
   },
 
   nitro: {

@@ -1,8 +1,9 @@
 # Inventory Pipeline dependencies
 # Removed: gspread, google-auth, google-auth-oauthlib, google-cloud-bigquery,
-#           prophet, cmdstanpy, pystan
+#           prophet, cmdstanpy, pystan, sqlite3 (built-in, replaced by psycopg2)
 
 requests>=2.31.0
+psycopg2-binary>=2.9.0
 python-dotenv>=1.0.0
 numpy>=1.26.0
 pandas>=2.2.0

@@ -14,18 +14,15 @@
     "@anthropic-ai/sdk": "^0.82.0",
     "@app-agent/organization": "workspace:*",
     "@iconify-json/lucide": "^1.2.87",
-    "@libsql/client": "^0.17.0",
     "@nuxt/ui": "^4.4.0",
-    "@nuxthub/core": "^0.10.6",
     "@unovis/ts": "^1.6.2",
     "@unovis/vue": "^1.6.2",
     "@vueuse/core": "^14.1.0",
     "@vueuse/nuxt": "^14.1.0",
-    "better-sqlite3": "^11.9.1",
-    "db0": "^0.3.1",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.0",
-    "nuxt-auth-utils": "^0.5.28"
+    "nuxt-auth-utils": "^0.5.28",
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.13.0",

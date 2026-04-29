@@ -1,13 +1,15 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
+import { pgTable, text, integer, real, serial } from 'drizzle-orm/pg-core'
 
 // ── inventory_master ────────────────────────────────────────────────────────
-export const inventoryMaster = sqliteTable('inventory_master', {
+export const inventoryMaster = pgTable('inventory_master', {
   sku:                        text('sku').primaryKey(),
   product_title:              text('product_title'),
   variant_title:              text('variant_title'),
   shopify_stock:              real('shopify_stock'),
   amazon_fba_stock:           real('amazon_fba_stock'),
   current_stock:              real('current_stock'),
+  sps_committed_qty:          real('sps_committed_qty'),
+  effective_stock:            real('effective_stock'),
   shopify_30d:                integer('shopify_30d'),
   shopify_60d:                integer('shopify_60d'),
   shopify_90d:                integer('shopify_90d'),
@@ -42,11 +44,11 @@ export const inventoryMaster = sqliteTable('inventory_master', {
   reorder_qty_9mo_adj:        integer('reorder_qty_9mo_adj'),
   reorder_qty_12mo_adj:       integer('reorder_qty_12mo_adj'),
   note:                       text('note'),
-  run_date:                   text('run_date')
+  run_date:                   text('run_date'),
 })
 
 // ── rolling_windows ─────────────────────────────────────────────────────────
-export const rollingWindows = sqliteTable('rolling_windows', {
+export const rollingWindows = pgTable('rolling_windows', {
   sku:              text('sku').primaryKey(),
   product_title:    text('product_title'),
   total_7d:         integer('total_7d'),
@@ -65,12 +67,12 @@ export const rollingWindows = sqliteTable('rolling_windows', {
   avg_daily_30d:    real('avg_daily_30d'),
   avg_daily_90d:    real('avg_daily_90d'),
   velocity_trend:   text('velocity_trend'),
-  run_date:         text('run_date')
+  run_date:         text('run_date'),
 })
 
 // ── forecast_history ─────────────────────────────────────────────────────────
-export const forecastHistory = sqliteTable('forecast_history', {
-  id:               integer('id').primaryKey({ autoIncrement: true }),
+export const forecastHistory = pgTable('forecast_history', {
+  id:               serial('id').primaryKey(),
   sku:              text('sku').notNull(),
   date:             text('date').notNull(),
   actual_units:     real('actual_units'),
@@ -80,12 +82,12 @@ export const forecastHistory = sqliteTable('forecast_history', {
   trend:            real('trend'),
   weekly_seasonal:  real('weekly_seasonal'),
   yearly_seasonal:  real('yearly_seasonal'),
-  run_date:         text('run_date')
+  run_date:         text('run_date'),
 })
 
 // ── stock_pipeline ───────────────────────────────────────────────────────────
-export const stockPipeline = sqliteTable('stock_pipeline', {
-  id:                         integer('id').primaryKey({ autoIncrement: true }),
+export const stockPipeline = pgTable('stock_pipeline', {
+  id:                         serial('id').primaryKey(),
   sku:                        text('sku').notNull(),
   product_title:              text('product_title'),
   type:                       text('type'),
@@ -98,11 +100,11 @@ export const stockPipeline = sqliteTable('stock_pipeline', {
   notes:                      text('notes'),
   active:                     text('active').default('TRUE'),
   arrived_date:               text('arrived_date'),
-  created_at:                 text('created_at')
+  created_at:                 text('created_at'),
 })
 
 // ── sku_params ───────────────────────────────────────────────────────────────
-export const skuParams = sqliteTable('sku_params', {
+export const skuParams = pgTable('sku_params', {
   sku:                       text('sku').primaryKey(),
   lead_time_days:            integer('lead_time_days'),
   lead_time_buffer_days:     integer('lead_time_buffer_days'),
@@ -121,31 +123,31 @@ export const skuParams = sqliteTable('sku_params', {
   supplier_name:             text('supplier_name'),
   shipping_method:           text('shipping_method'),
   notes:                     text('notes'),
-  updated_at:                text('updated_at')
+  updated_at:                text('updated_at'),
 })
 
 // ── run_log ──────────────────────────────────────────────────────────────────
-export const runLog = sqliteTable('run_log', {
-  id:              integer('id').primaryKey({ autoIncrement: true }),
+export const runLog = pgTable('run_log', {
+  id:              serial('id').primaryKey(),
   run_timestamp:   text('run_timestamp').notNull(),
   source:          text('source').notNull(),
   records_pulled:  integer('records_pulled'),
   status:          text('status'),
-  notes:           text('notes')
+  notes:           text('notes'),
 })
 
 // ── daily_briefs ─────────────────────────────────────────────────────────────
-export const dailyBriefs = sqliteTable('daily_briefs', {
-  id:           integer('id').primaryKey({ autoIncrement: true }),
+export const dailyBriefs = pgTable('daily_briefs', {
+  id:           serial('id').primaryKey(),
   date:         text('date').notNull(),
   narrative:    text('narrative').notNull(),
   brief_type:   text('brief_type').default('daily'),
-  generated_at: text('generated_at')
+  generated_at: text('generated_at'),
 })
 
 // ── po_history ───────────────────────────────────────────────────────────────
-export const poHistory = sqliteTable('po_history', {
-  id:                         integer('id').primaryKey({ autoIncrement: true }),
+export const poHistory = pgTable('po_history', {
+  id:                         serial('id').primaryKey(),
   po_number:                  text('po_number').notNull(),
   sku:                        text('sku').notNull(),
   product_title:              text('product_title'),
@@ -157,12 +159,12 @@ export const poHistory = sqliteTable('po_history', {
   lead_time_days:             integer('lead_time_days'),
   variance_days:              integer('variance_days'),
   shipping_method:            text('shipping_method'),
-  notes:                      text('notes')
+  notes:                      text('notes'),
 })
 
 // ── edi_orders ───────────────────────────────────────────────────────────────
-export const ediOrders = sqliteTable('edi_orders', {
-  id:            integer('id').primaryKey({ autoIncrement: true }),
+export const ediOrders = pgTable('edi_orders', {
+  id:            serial('id').primaryKey(),
   po_number:     text('po_number').notNull(),
   sku:           text('sku').notNull(),
   retailer:      text('retailer'),
@@ -172,5 +174,5 @@ export const ediOrders = sqliteTable('edi_orders', {
   expected_date: text('expected_date'),
   date:          text('date'),
   doc_type:      text('doc_type'),
-  status:        text('status')
+  status:        text('status'),
 })
