@@ -3,7 +3,8 @@ builder = "nixpacks"
 buildCommand = "bun install && bun run build"
 
 [build.nixpacksPlan.variables]
-NODE_VERSION = "20"
+NODE_VERSION = "22"
+BUN_VERSION = "1.2.15"
 
 [deploy]
 startCommand = "bun .output/server/index.mjs"
