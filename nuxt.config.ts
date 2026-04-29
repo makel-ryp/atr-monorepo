@@ -1,9 +1,6 @@
 export default defineNuxtConfig({
-  extends: ['../../organization'],
-
   modules: [
     '@nuxt/ui',
-    '@nuxthub/core',
     '@vueuse/nuxt',
     'nuxt-auth-utils'
   ],
@@ -18,7 +15,8 @@ export default defineNuxtConfig({
     server: {
       hmr: {
         overlay: false
-      }
+      },
+      allowedHosts: true,
     }
   },
 
@@ -26,12 +24,8 @@ export default defineNuxtConfig({
     typeCheck: false
   },
 
-  hub: {
-    db: 'sqlite'
-  },
-
   nitro: {
-    preset: 'bun',
+    preset: 'node-server',
     experimental: {
       tasks: true
     },
